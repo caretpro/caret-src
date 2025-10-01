@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Java
+Bundle-SymbolicName: caret.tasks.java;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: caret.tasks.java.Activator
+Bundle-Vendor: EPS
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ caret,
+ org.eclipse.core.resources
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Automatic-Module-Name: caret.tasks.java
+Bundle-ActivationPolicy: lazy

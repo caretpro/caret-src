@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="caret.extagent">
+      <agent
+            class="caret.agent.llama.AgentLlama"
+            id="Code Llama"
+            name="Code Llama">
+      </agent>
+   </extension>
+	<extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="caret.agent.llama.preferences.LlamaPreferencePage"
+            id="caret.agent.llama.preferences.LlamaPreferencePage"
+            name="Code Llama"
+            category="caret.preferences.AgentsPreferencePage">
+      </page>
+   </extension>
+	<extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="caret.agent.llama.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>	
+</plugin>

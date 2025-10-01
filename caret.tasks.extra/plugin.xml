@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="caret.TaskGroup">
+      <tasks
+            id="New"
+            name="New tasks">
+         <task
+               bind="CONTEXTUAL"
+               code="CONVERT_LAMBDAS"
+               description="Convert code using lambdas. This task converts the body code of the method"
+               name="Convert code using lambdas">
+            <parameter
+                  description="method name"
+                  hasSource="true"
+                  name="methodName"
+                  parameterType="METHOD"
+                  required="true">
+            </parameter>
+            <parameter
+                  description="Class Name"
+                  hasSource="true"
+                  name="className"
+                  parameterType="CLASS"
+                  required="false">
+            </parameter>
+            <context
+                  attributes="true"
+                  extendedClass="true"
+                  implementedInterface="true"
+                  methodParameters="true"
+                  methodVariables="true">
+            </context>
+            <action
+                  parameterName="methodName"
+                  parameterType="METHOD"
+                  type="UPDATE">
+            </action>
+         </task>
+         <task
+               bind="CONTEXTUAL"
+               code="COMPLETE_METHOD"
+               description="Complete java method. The requested task must explicitly mention the word METHOD."
+               name="Complete java method">
+            <parameter
+                  description="Method Name"
+                  hasSource="true"
+                  name="methodName"
+                  parameterType="METHOD"
+                  required="true">
+            </parameter>
+            <parameter
+                  description="Class Name"
+                  hasSource="true"
+                  name="className"
+                  parameterType="CLASS"
+                  required="false">
+            </parameter>
+            <context
+                  attributes="true"
+                  extendedClass="true"
+                  implementedInterface="true"
+                  methodParameters="true"
+                  methodVariables="true">
+            </context>
+            <action
+                  parameterName="methodName"
+                  parameterType="METHOD"
+                  type="UPDATE">
+            </action>
+         </task>
+         <task
+               bind="CONTEXTUAL"
+               code="COMPLETE_CLASS"
+               description="Complete java class. The requested task must explicitly mention the word CLASS."
+               name="Complete java class">
+            <parameter
+                  description="Class Name"
+                  hasSource="true"
+                  name="className"
+                  parameterType="CLASS"
+                  required="true">
+            </parameter>
+            <context
+                  attributes="true"
+                  extendedClass="true"
+                  implementedInterface="true"
+                  methodParameters="true"
+                  methodVariables="true">
+            </context>
+            <action
+                  parameterName="className"
+                  parameterType="CLASS"
+                  type="UPDATE">
+            </action>
+         </task>
+      </tasks>
+   </extension>
+
+</plugin>

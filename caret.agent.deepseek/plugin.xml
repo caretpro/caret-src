@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="caret.extagent">
+      <agent
+            class="caret.agent.deepseek.AgentDeepSeek"
+            id="DeepSeek"
+            name="DeepSeek">
+      </agent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="caret.agent.deepseek.preferences.DeepseekPreferencePage"
+            id="caret.agent.deepseek.preferences.DeepseekPreferencePage"
+            name="DeepSeek"
+            category="caret.preferences.AgentsPreferencePage">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="caret.agent.deepseek.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>
+
+</plugin>
+

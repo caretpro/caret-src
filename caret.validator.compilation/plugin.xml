@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="caret.Validator">
+      <Validator
+            class="caret.validator.compilation.CompilationValidator"
+            id="Compilation Validator"
+            name="Compilation Validator">
+      </Validator>
+   </extension>
+
+</plugin>

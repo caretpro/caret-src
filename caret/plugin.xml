@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension-point id="extagent" name="extagent" schema="schema/caret.extagent.exsd"/>
+   <extension-point id="TaskGroup" name="TaskGroup" schema="schema/caret.exttasks.exsd"/>
+   <extension-point id="Validator" name="Validator" schema="schema/caret.Validator.exsd"/>
+
+   <extension
+         id="caret.fragment"
+         point="org.eclipse.e4.workbench.model">
+      <fragment
+            uri="chatfragment.e4xmi"
+            apply="always">
+      </fragment>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="caret.preferences.ChatbotPreferencePage"
+            id="caret.preferences.ChatbotPreferencePage"
+            name="CARET">
+      </page>
+      <page
+            class="caret.preferences.AgentsPreferencePage"
+            id="caret.preferences.AgentsPreferencePage"
+            category="caret.preferences.ChatbotPreferencePage"
+            name="Agents">
+      </page>
+      <page
+            class="caret.preferences.TasksPreferencePage"
+            id="caret.preferences.TasksPreferencePage"
+            category="caret.preferences.ChatbotPreferencePage"
+            name="Tasks">
+      </page>
+      <page
+            class="caret.preferences.ValidatorsPreferencePage"
+            id="caret.preferences.ValidatorsPreferencePage"
+            category="caret.preferences.ChatbotPreferencePage"
+            name="Validators">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="caret.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            defaultHandler="caret.handlers.TaskHandler"
+            id="caret.commands.Task"
+            name="Task">
+            <commandParameter
+	           id="iTasksGroupId"
+	           name="iTasksGroupId"
+	           optional="true"
+	           typeId="caret.handlers.typeData">
+	     	</commandParameter>
+	     	<commandParameter
+	           id="taskCode"
+	           name="taskCode"
+	           optional="true"
+	           typeId="caret.handlers.typeData">
+	     	</commandParameter>
+      </command>
+      <commandParameterType
+          id="caret.handlers.typeData"
+          type="caret.handlers.TypeData">
+  	  </commandParameterType>
+   </extension>
+   
+   <extension point="org.eclipse.core.expressions.definitions">
+      <definition id="caret.definitions.javafile">
+         <iterate ifEmpty="false">
+            <adapt type="org.eclipse.core.resources.IFile">
+               <test property="org.eclipse.core.resources.extension"
+                     value="java"/>
+               <test property="org.eclipse.core.resources.contentTypeId"
+                     value="org.eclipse.jdt.core.javaSource"/>
+            </adapt>
+         </iterate>
+      </definition>
+   </extension>
+   <extension point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            class="caret.handlers.DefineCommands"
+            locationURI="popup:CARETMenu">
+      </menuContribution>
+      <menuContribution locationURI="popup:org.eclipse.ui.popup.any">
+      	 <menu
+               id="CARETMenu"
+               label="CARET">
+         </menu>
+      </menuContribution>  
+   </extension>
+   <extension 
+	   point="org.eclipse.jdt.ui.javaCompletionProposalComputer"
+	   id="CARETCompletionProposalComputer"
+	   name="CARET Completion Proposal Computer">
+	   <proposalCategory icon="icons/test_attrib.png"/>
+	   <javaCompletionProposalComputer
+	      class="caret.contentAssist.CustomCompletionProposalComputer"
+	      categoryId="CARETCompletionProposalComputer"
+	      activate="true"
+	      needsSortingAfterFiltering="false"
+	      requiresUIThread="true">
+	   </javaCompletionProposalComputer>
+   </extension>
+</plugin>

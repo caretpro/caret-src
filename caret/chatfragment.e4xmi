@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="ASCII"?>
+<fragment:ModelFragments xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/descriptor/basic" xmlns:commands="http://www.eclipse.org/ui/2010/UIModel/application/commands" xmlns:fragment="http://www.eclipse.org/ui/2010/UIModel/fragment" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_R_qZABmOEe60muc1-B4nuA">
+  <fragments xsi:type="fragment:StringModelFragment" xmi:id="_SqoBkBmOEe60muc1-B4nuA" featurename="descriptors" parentElementId="org.eclipse.e4.legacy.ide.application">
+    <elements xsi:type="basic:PartDescriptor" xmi:id="_XMaxwBmOEe60muc1-B4nuA" elementId="caret.partdescriptor.chat" label="Caret Assistant" iconURI="platform:/plugin/caret/icons/user.png" tooltip="Caret Assistant" category="Caret" closeable="true" contributionURI="bundleclass://caret/caret.ChatView">
+      <tags>View</tags>
+      <handlers xmi:id="_RFT0IBmPEe60muc1-B4nuA" elementId="caret.handler.0" contributionURI="bundleclass://caret/caret.handlers.SaveHandler" command="_qorWIBmOEe60muc1-B4nuA"/>
+      <handlers xmi:id="_hnsSwCSPEe6oo-akEmCiJw" elementId="caret.handler.1" contributionURI="bundleclass://caret/caret.handlers.ClearHandler" command="_SwnmQCSOEe6oo-akEmCiJw"/>
+      <toolbar xmi:id="_yr9QEBmOEe60muc1-B4nuA" elementId="caret.toolbar.0">
+        <children xsi:type="menu:HandledToolItem" xmi:id="_7WQNkCSNEe6oo-akEmCiJw" elementId="caret.handledtoolitem.clear" label="Clear" iconURI="platform:/plugin/caret/icons/clear_co.png" command="_SwnmQCSOEe6oo-akEmCiJw"/>
+        <children xsi:type="menu:HandledToolItem" xmi:id="_31ofoBmOEe60muc1-B4nuA" elementId="caret.handledtoolitem.save" label="Save" iconURI="platform:/plugin/caret/icons/save.png" command="_qorWIBmOEe60muc1-B4nuA"/>
+      </toolbar>
+    </elements>
+    <elements xsi:type="basic:PartDescriptor" xmi:id="_H1hr4LLoEe-UXYryuheorQ" elementId="caret.partdescriptor.statistics" label="Caret Statistics" iconURI="platform:/plugin/caret/icons/history_list.png" tooltip="Caret Statistics" category="Caret" closeable="true" contributionURI="bundleclass://caret/caret.StatisticsView">
+      <toolbar xmi:id="_zYE60LLoEe-UXYryuheorQ" elementId="caret.toolbar.1"/>
+    </elements>
+  </fragments>
+  <fragments xsi:type="fragment:StringModelFragment" xmi:id="_koJXEBmOEe60muc1-B4nuA" featurename="commands" parentElementId="xpath:/">
+    <elements xsi:type="commands:Command" xmi:id="_SwnmQCSOEe6oo-akEmCiJw" elementId="caret.command.clear" commandName="Clear Commands"/>
+    <elements xsi:type="commands:Command" xmi:id="_qorWIBmOEe60muc1-B4nuA" elementId="caret.command.save" commandName="Save commands"/>
+  </fragments>
+</fragment:ModelFragments>

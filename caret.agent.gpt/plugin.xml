@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="caret.extagent">
+      <agent
+            class="caret.agent.gpt.AgentGPT"
+            id="GPT"
+            name="GPT">
+      </agent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="caret.agent.gpt.preferences.GPTPreferencePage"
+            id="caret.agent.gpt.preferences.GPTPreferencePage"
+            name="GPT"
+            category="caret.preferences.AgentsPreferencePage">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="caret.agent.gpt.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>
+
+</plugin>

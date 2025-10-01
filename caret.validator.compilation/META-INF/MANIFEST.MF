@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Compilation
+Bundle-SymbolicName: caret.validator.compilation;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Import-Package: org.eclipse.core.resources
+Bundle-Activator: caret.validator.compilation.Activator
+Bundle-Vendor: EPS
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ caret
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Automatic-Module-Name: caret.validator.compilation
+Bundle-ActivationPolicy: lazy

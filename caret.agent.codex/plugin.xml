@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="caret.extagent">
+      <agent
+            class="caret.agent.codex.AgentCodex"
+            id="Codex"
+            name="Codex">
+      </agent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="caret.agent.codex.preferences.CodexPreferencePage"
+            id="caret.agent.codex.preferences.CodexPreferencePage"
+            name="Codex"
+            category="caret.preferences.AgentsPreferencePage">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="caret.agent.codex.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>
+
+</plugin>

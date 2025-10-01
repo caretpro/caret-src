@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/Caret_1.0.0.qualifier.jar" id="Caret" version="1.0.0.qualifier">
+      <category name="Tools"/>
+   </feature>
+   <category-def name="Tools" label="Tools"/>
+</site>

@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Gemini
+Bundle-SymbolicName: caret.agent.gemini;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: caret.agent.gemini.Activator
+Bundle-Vendor: EPS
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ caret,
+ com.google.gson
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Automatic-Module-Name: caret.agent.gemini
+Bundle-ActivationPolicy: lazy

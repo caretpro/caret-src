@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="caret.extagent">
+      <agent
+            class="caret.agent.gemini.AgentGemini"
+            id="Gemini"
+            name="Gemini">
+      </agent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="caret.agent.gemini.preferences.GeminiPreferencePage"
+            id="caret.agent.gemini.preferences.GeminiPreferencePage"
+            name="Gemini"
+            category="caret.preferences.AgentsPreferencePage">
+      </page>
+   </extension>
+	<extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="caret.agent.gemini.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>		
+</plugin>

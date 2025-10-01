@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Lamb
+Bundle-SymbolicName: caret.tasks.extra;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: caret.tasks.extra.Activator
+Bundle-Vendor: EPS
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ caret;bundle-version="1.0.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Automatic-Module-Name: caret.tasks.extra
+Bundle-ActivationPolicy: lazy

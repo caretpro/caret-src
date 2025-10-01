@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="caret.TaskGroup">
+      <tasks
+            id="java"
+            name="java"
+            description="java tasks"
+            class="caret.tasks.java.JavaTasks">
+      </tasks>
+   </extension>
+
+</plugin>

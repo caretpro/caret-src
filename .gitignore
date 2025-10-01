@@ -1,0 +1,7 @@
+*.class
+*.log
+**/.log
+**/.lock
+**/.DS_Store
+caret.us/**/*.jar
+.metadata/
