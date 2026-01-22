@@ -156,7 +156,6 @@ public class StatisticsViewLog {
     			System.out.println("###query----");
     		}
 		} catch (Exception e) {
-			//System.out.print("ERROR query:"+e.getMessage());
 			//e.printStackTrace();
 		}
     }

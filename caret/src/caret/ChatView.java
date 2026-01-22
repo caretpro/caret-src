@@ -343,104 +343,7 @@ public class ChatView  {
 				}
          	}
          }
-	}
-
-	public void runCompiler() {
-    	String projectPath = getCurrentProject().getLocation().toString();
-    	Log.d(projectPath);
-    	String className = "AgentsStatistics";
-    	String code =
-    	        "\n"
-    	        + "import java.util.ArrayList;\n"
-    	        + "import java.util.HashMap;\n"
-    	        + "import java.util.List;\n"
-    	        + "import java.util.Map;\n"
-    	        + "\n"
-    	        + "import com.google.gson.Gson;\n"
-    	        + "import com.google.gson.reflect.TypeToken;\n"
-    	        + "\n"
-    	        + "import caret.data.Extractor;\n"
-    	        + "import caret.data.Interaction;\n"
-    	        + "import caret.tool.Util;\n"
-    	        + "\n"
-    	        + "public class AgentsStatistics implements Extractor{\n"
-    	        + "	\n"
-    	        + "	public AgentsStatistics (){\n"
-    	        + "		\n"
-    	        + "	}\n"
-    	        + "\n"
-    	        + "	public List<Interaction> getIteractionsJSON(String projectPath) {\n"
-    	        + "		List<Interaction> totalInteractions = new ArrayList<Interaction> ();\n"
-    	        + "		List <String> listInteractionsJSON = Util.readFilesFromDirectory(projectPath+\"/.log\", \".json\");\n"
-    	        + "		Gson gson = new Gson();\n"
-    	        + "		for (String interactionsJSON : listInteractionsJSON) {\n"
-    	        + "			List<Interaction> interactions = gson.fromJson(interactionsJSON, new TypeToken<List<Interaction>>() {}.getType());\n"
-    	        + "	        totalInteractions.addAll(interactions);\n"
-    	        + "		}\n"
-    	        + "		return totalInteractions;\n"
-    	        + "	}\n"
-    	        + "  \n"
-    	        + "    /*\n"
-    	        + "     * Get best agent based on pre-validations\n"
-    	        + "     */\n"
-    	        + "	@Override\n"
-    	        + "	public String getData(String projectPath) {\n"
-    	        + "        if (projectPath == null) {\n"
-    	        + "            System.err.println(\"No project found.\");\n"
-    	        + "            return null;\n"
-    	        + "        }\n"
-    	        + "\n"
-    	        + "        List<Interaction> interactions = getIteractionsJSON(projectPath);\n"
-    	        + "        if (interactions.isEmpty()) {\n"
-    	        + "            System.err.println(\"No interactions found in \" + projectPath);\n"
-    	        + "            return null;\n"
-    	        + "        }\n"
-    	        + "\n"
-    	        + "        Map<String, int[]> agentStats = new HashMap<>();\n"
-    	        + "        // [0] = total interactions, [1] = passed pre-validations\n"
-    	        + "\n"
-    	        + "        for (Interaction interaction : interactions) {\n"
-    	        + "            if (interaction.getResult() == null || interaction.getResult().getAgent() == null)\n"
-    	        + "                continue;\n"
-    	        + "\n"
-    	        + "            String agentName = interaction.getResult().getAgent().getName();\n"
-    	        + "            agentStats.putIfAbsent(agentName, new int[2]);\n"
-    	        + "            agentStats.get(agentName)[0]++; // total\n"
-    	        + "            if (interaction.isPassedPreValidations()) {\n"
-    	        + "                agentStats.get(agentName)[1]++; // passed\n"
-    	        + "            }\n"
-    	        + "        }\n"
-    	        + "\n"
-    	        + "        String bestAgent = null;\n"
-    	        + "        double bestRate = -1.0;\n"
-    	        + "\n"
-    	        + "        for (Map.Entry<String, int[]> entry : agentStats.entrySet()) {\n"
-    	        + "            String agent = entry.getKey();\n"
-    	        + "            int total = entry.getValue()[0];\n"
-    	        + "            int passed = entry.getValue()[1];\n"
-    	        + "            double rate = (total > 0) ? (double) passed / total : 0.0;\n"
-    	        + "\n"
-    	        + "            System.out.printf(\"Agent: %s | Passed: %d | Total: %d | Rate: %.2f%%%n\",\n"
-    	        + "                    agent, passed, total, rate * 100);\n"
-    	        + "\n"
-    	        + "            if (rate > bestRate) {\n"
-    	        + "                bestRate = rate;\n"
-    	        + "                bestAgent = agent;\n"
-    	        + "            }\n"
-    	        + "        }\n"
-    	        + "\n"
-    	        + "        return bestAgent;\n"
-    	        + "	}\n"
-    	        + "}";
-
-    	try {
-    	    Object result = InMemoryJavaCompiler.compileAndRun(className, code, "getData", projectPath);
-    	    System.out.println("### Resultado: " + result.toString());
-    	} catch (Exception e) {
-    	    e.printStackTrace();
-    	}
-    }
-    
+	}    
     
     public void runCompiler(String code) {
     	String projectPath = getCurrentProject().getLocation().toString();
@@ -1737,7 +1640,6 @@ public class ChatView  {
     			if(interfaceNames != null) {
     				try {
 						srcInterface = JavaProject.getClass(resource.getProject(), interfaceNames[0]).getSource();
-						//System.out.println("\n-----"+srcInterface+"\n-----interface");
     				} catch (JavaModelException e) {
     					//e.printStackTrace();
     	    			Log.e(e.getMessage());
