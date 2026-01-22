@@ -6,6 +6,7 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.preference.*;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.ui.IWorkbenchPreferencePage;
@@ -68,7 +69,7 @@ public class AgentsPreferencePage extends FieldEditorPreferencePage implements I
 				return null;
 			}
 	    });
-		addField(new MoveListEditor(PreferenceConstants.P_LIST_TASK_PROCESSING_AGENTS, "Task Processing Agents:", getFieldEditorParent()) {
+		MoveListEditor processingAgents = new MoveListEditor(PreferenceConstants.P_LIST_TASK_PROCESSING_AGENTS, "Task Processing Agents:", getFieldEditorParent()) {
 	        @Override
 	        protected String[] parseString(String str) {
 	            // TODO Auto-generated method stub
@@ -86,7 +87,23 @@ public class AgentsPreferencePage extends FieldEditorPreferencePage implements I
 				// TODO Auto-generated method stub
 				return null;
 			}
+	    };
+	    addField(processingAgents);
+		
+	    BooleanFieldEditor dynamicMode = new BooleanFieldEditor(
+	            PreferenceConstants.P_AGENTS_DINAMIC,
+	            "Dynamic mode",
+	            getFieldEditorParent());
+	    addField(dynamicMode);
+
+	    dynamicMode.setPropertyChangeListener(event -> {
+	        if (BooleanFieldEditor.VALUE.equals(event.getProperty())) {
+	            boolean enabled = dynamicMode.getBooleanValue();
+	            processingAgents.setEnabled(!enabled);
+	        }
 	    });
+
+	    processingAgents.setEnabled(!dynamicMode.getBooleanValue());
 		
 		addField(new ListEditor(PreferenceConstants.P_LIST_CONTENT_ASSISTANT_AGENTS, "Content Assistant Agents:", getFieldEditorParent()) {
 	        @Override

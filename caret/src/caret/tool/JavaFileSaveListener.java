@@ -27,7 +27,9 @@ public class JavaFileSaveListener implements IResourceChangeListener {
                         if (resource != null && resource.getType() == IResource.FILE) {
                             if ("java".equals(resource.getFileExtension())
                                 && (delta.getFlags() & IResourceDelta.CONTENT) != 0) {
-                            	StatisticsView.getInstance().updateStatistics();
+                            	if(StatisticsView.getInstance()!=null) {
+                            		StatisticsView.getInstance().updateStatistics();
+                            	}
                             }
                         }
                         return true;

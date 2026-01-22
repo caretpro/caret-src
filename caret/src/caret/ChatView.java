@@ -9,11 +9,14 @@ import caret.agent.Response;
 import caret.agent.ResponseJSON;
 import caret.contentAssist.Suggestions;
 import caret.data.Agent;
+import caret.data.AnnotationRestorer;
 import caret.data.ChatData;
 import caret.data.Context;
 import caret.data.ContextConversation;
 import caret.data.Interaction;
+import caret.data.LogData;
 import caret.data.Result;
+import caret.data.MongoDB;
 import caret.preferences.PTask;
 import caret.preferences.PreferenceConstants;
 import caret.preferences.PreferenceInitializer;
@@ -22,6 +25,9 @@ import caret.project.java.ASTMethodExtractor;
 import caret.project.java.JavaProject;
 import caret.project.java.MethodReplacer;
 import caret.service.CodeAnalizer;
+import caret.stats.AgentsStatistics;
+import caret.stats.StatisticsQuery;
+import caret.stats.StatisticsResponse;
 import caret.tasks.ITasksGroup;
 import caret.tasks.JavaConcept;
 import caret.tasks.JavaParameter;
@@ -33,6 +39,7 @@ import caret.tasks.TasksManager;
 import caret.tool.ClassInfoExtractor;
 import caret.tool.ClasspathLoader;
 import caret.tool.Hash;
+import caret.tool.InMemoryJavaCompiler;
 import caret.tool.JavaSourceCompiler;
 import caret.tool.Log;
 import caret.tool.MethodPosition;
@@ -45,6 +52,7 @@ import caret.ui.PopupDialog;
 import caret.ui.ResponseDialog;
 import caret.validator.Validation;
 import caret.validator.ValidatorInterface;
+import caret.vcs.GitUser;
 
 import java.util.UUID;
 
@@ -231,6 +239,13 @@ public class ChatView  {
 	
 	public Response currentResponse = null;
 	public Interaction currentInteraction;
+	private GitUser gitUser;
+	
+	String mongoUser;
+	String mongoPassword;
+	String mongoHost;
+	String mongoDatabase;
+	String mongoAppName;
 	
 	@PostConstruct
     public void createPartControl(Composite parent){
@@ -241,7 +256,7 @@ public class ChatView  {
     	contextConversation.setSessionId(sessionId);
     	display = parent.getDisplay();
     	store = Activator.getDefault().getPreferenceStore();
-    	parent.setBackground(display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));
+    	parent.setBackground(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
         scrolledComposite = new ScrolledComposite( parent, SWT.V_SCROLL );
 		compositeChat = new Composite( scrolledComposite, SWT.NONE | SWT.BORDER);
 	    compositeChat.setLayout( new GridLayout( 2, false ) );   
@@ -285,7 +300,158 @@ public class ChatView  {
     }
     
     public void init() {
+    	AgentsStatistics agentsStatistics = new AgentsStatistics();
+    	if(getCurrentProject()!=null) {
+    		agentsStatistics.print(getCurrentProject().getLocation().toString());
+    	}
+    	gitUser = new GitUser();
+        gitUser.loadGitUser();
+        gitUser.printGitUser();
     	checkAgents();
+    	
+    	mongoUser     = store.getString(PreferenceConstants.P_MONGO_USER);
+    	mongoPassword = store.getString(PreferenceConstants.P_MONGO_PASSWORD);
+    	mongoHost     = store.getString(PreferenceConstants.P_MONGO_HOST);
+    	mongoDatabase = store.getString(PreferenceConstants.P_MONGO_DATABASE);
+    	mongoAppName  = store.getString(PreferenceConstants.P_MONGO_APPNAME);
+    	
+    }
+    
+    public void restoreAnnotations() {
+    	if(getCurrentProject() == null) {
+    		return;
+    	}
+    	List<Interaction> interactions = LogData.getIteractionsJSON(getCurrentProject());
+    	for (Interaction interaction : interactions) {
+         	if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
+         		String projectName= interaction.getContext().getResource().getProjectName();
+         		IProject project = getProject(projectName);
+         		String filename = interaction.getContext().getResource().getFileName();
+         		String className = filename.replaceFirst("\\.java$", "");
+         		String methodName = interaction.getContext().getResource().getCodeFragment().getMethodName();
+         		String agent = interaction.getResult().getAgent().getTechnology();
+                String task = interaction.getTaskCode();
+                String id = String.valueOf(interaction.getTimestamp());
+                String timestamp = Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp());
+         		try {
+					boolean added = AnnotationRestorer.addGeneratedAnnotationIfMissing(project, className, methodName, agent, task, id, timestamp);
+					if(added) {
+						addMessage(BOT,"Annotation restored: "+projectName+"->"+className+"->"+methodName+"(...)", null, NOT_INDEX);
+					}
+         		} catch (CoreException e) {
+					e.printStackTrace();
+				}
+         	}
+         }
+	}
+
+	public void runCompiler() {
+    	String projectPath = getCurrentProject().getLocation().toString();
+    	Log.d(projectPath);
+    	String className = "AgentsStatistics";
+    	String code =
+    	        "\n"
+    	        + "import java.util.ArrayList;\n"
+    	        + "import java.util.HashMap;\n"
+    	        + "import java.util.List;\n"
+    	        + "import java.util.Map;\n"
+    	        + "\n"
+    	        + "import com.google.gson.Gson;\n"
+    	        + "import com.google.gson.reflect.TypeToken;\n"
+    	        + "\n"
+    	        + "import caret.data.Extractor;\n"
+    	        + "import caret.data.Interaction;\n"
+    	        + "import caret.tool.Util;\n"
+    	        + "\n"
+    	        + "public class AgentsStatistics implements Extractor{\n"
+    	        + "	\n"
+    	        + "	public AgentsStatistics (){\n"
+    	        + "		\n"
+    	        + "	}\n"
+    	        + "\n"
+    	        + "	public List<Interaction> getIteractionsJSON(String projectPath) {\n"
+    	        + "		List<Interaction> totalInteractions = new ArrayList<Interaction> ();\n"
+    	        + "		List <String> listInteractionsJSON = Util.readFilesFromDirectory(projectPath+\"/.log\", \".json\");\n"
+    	        + "		Gson gson = new Gson();\n"
+    	        + "		for (String interactionsJSON : listInteractionsJSON) {\n"
+    	        + "			List<Interaction> interactions = gson.fromJson(interactionsJSON, new TypeToken<List<Interaction>>() {}.getType());\n"
+    	        + "	        totalInteractions.addAll(interactions);\n"
+    	        + "		}\n"
+    	        + "		return totalInteractions;\n"
+    	        + "	}\n"
+    	        + "  \n"
+    	        + "    /*\n"
+    	        + "     * Get best agent based on pre-validations\n"
+    	        + "     */\n"
+    	        + "	@Override\n"
+    	        + "	public String getData(String projectPath) {\n"
+    	        + "        if (projectPath == null) {\n"
+    	        + "            System.err.println(\"No project found.\");\n"
+    	        + "            return null;\n"
+    	        + "        }\n"
+    	        + "\n"
+    	        + "        List<Interaction> interactions = getIteractionsJSON(projectPath);\n"
+    	        + "        if (interactions.isEmpty()) {\n"
+    	        + "            System.err.println(\"No interactions found in \" + projectPath);\n"
+    	        + "            return null;\n"
+    	        + "        }\n"
+    	        + "\n"
+    	        + "        Map<String, int[]> agentStats = new HashMap<>();\n"
+    	        + "        // [0] = total interactions, [1] = passed pre-validations\n"
+    	        + "\n"
+    	        + "        for (Interaction interaction : interactions) {\n"
+    	        + "            if (interaction.getResult() == null || interaction.getResult().getAgent() == null)\n"
+    	        + "                continue;\n"
+    	        + "\n"
+    	        + "            String agentName = interaction.getResult().getAgent().getName();\n"
+    	        + "            agentStats.putIfAbsent(agentName, new int[2]);\n"
+    	        + "            agentStats.get(agentName)[0]++; // total\n"
+    	        + "            if (interaction.isPassedPreValidations()) {\n"
+    	        + "                agentStats.get(agentName)[1]++; // passed\n"
+    	        + "            }\n"
+    	        + "        }\n"
+    	        + "\n"
+    	        + "        String bestAgent = null;\n"
+    	        + "        double bestRate = -1.0;\n"
+    	        + "\n"
+    	        + "        for (Map.Entry<String, int[]> entry : agentStats.entrySet()) {\n"
+    	        + "            String agent = entry.getKey();\n"
+    	        + "            int total = entry.getValue()[0];\n"
+    	        + "            int passed = entry.getValue()[1];\n"
+    	        + "            double rate = (total > 0) ? (double) passed / total : 0.0;\n"
+    	        + "\n"
+    	        + "            System.out.printf(\"Agent: %s | Passed: %d | Total: %d | Rate: %.2f%%%n\",\n"
+    	        + "                    agent, passed, total, rate * 100);\n"
+    	        + "\n"
+    	        + "            if (rate > bestRate) {\n"
+    	        + "                bestRate = rate;\n"
+    	        + "                bestAgent = agent;\n"
+    	        + "            }\n"
+    	        + "        }\n"
+    	        + "\n"
+    	        + "        return bestAgent;\n"
+    	        + "	}\n"
+    	        + "}";
+
+    	try {
+    	    Object result = InMemoryJavaCompiler.compileAndRun(className, code, "getData", projectPath);
+    	    System.out.println("### Resultado: " + result.toString());
+    	} catch (Exception e) {
+    	    e.printStackTrace();
+    	}
+    }
+    
+    
+    public void runCompiler(String code) {
+    	String projectPath = getCurrentProject().getLocation().toString();
+    	Log.d(projectPath);
+    	String className = "ExtractorStatistics";
+    	try {
+    	    Object result = InMemoryJavaCompiler.compileAndRun(className, code, "getData", projectPath);
+    	    System.out.println("### Resultado: " + result.toString());
+    	} catch (Exception e) {
+    	    e.printStackTrace();
+    	}
     }
     
     public void checkAgents() {
@@ -575,6 +741,7 @@ public class ChatView  {
     					}
     					if (task != null) {
     						updateTaskParameters(task,jsonParameters);
+    						Log.d("###Save tasK="+task.getParameterByType(JavaConcept.METHOD.name()).getValue());
     						processTask(task);
     					}else {
     						List<Task> tasks = TasksManager.getPreferenceTasks(); 
@@ -582,15 +749,30 @@ public class ChatView  {
     						for (Task itemTask : tasks) {
     							listTasks += "- "+itemTask.getName()+"\n";
     						}
-    			            Response fallbackResponse = processMessageFallback(true, messageInput, TEMPERATURE_LOW);
-    			            if(fallbackResponse != null) {
+    						Response fallbackResponse = processMessageFallback(true, getStatisticsPrompt()+" - "+messageInput, TEMPERATURE_LOW);
+		            		if(fallbackResponse != null) {
     			            	if(fallbackResponse.getText() != null) {
-    			            		if(fallbackResponse.getText().indexOf("NOT_ABOUT_PROGRAMMING")>-1) {
-        			            		addMessage(BOT,"Your request could not be processed by some of the supported tasks:\n"+listTasks, null, NOT_INDEX);
-        								System.out.println("sendPost: Error getting supported task");
-        			            	}else {
-        			            		addMessage(BOT,fallbackResponse.getText(), null, NOT_INDEX);
-        			            	}
+			            			if(fallbackResponse.getText().indexOf("ABOUT_STATISTICS")>-1) {
+			            				Gson statsGson = new Gson();
+			            		        StatisticsResponse statsResponse = statsGson.fromJson(Util.getJSON(fallbackResponse.getText()), StatisticsResponse.class);
+			            		        System.out.println("Classification: " + statsResponse.getClassificationCode());
+			            		        System.out.println("Class: " + statsResponse.getJavaClass());
+			            		        runCompiler(statsResponse.getJavaClass());
+			            		        StatisticsQuery statsQuery = new StatisticsQuery(
+			            		        		messageInput,
+			            		        		statsResponse.getJavaClass(),
+			            		                gitUser.getUser()
+			            		        );
+			            		        String projectName = getCurrentProject().getName();
+			            		        Gson stGson = new GsonBuilder().setPrettyPrinting().create();;
+			            		        String statsJSON = stGson.toJson(statsQuery);
+			            		        String timeSession = Util.getDateFormat("yyyyMMdd-HHmmss");
+			            		        Util.saveLog(pathWorkspace+"/"+projectName+"/", "query-"+timeSession+".gson", "["+statsJSON+"]", true);
+    			            			addMessage(BOT,fallbackResponse.getText(), null, NOT_INDEX);
+    			            		}else {
+    			            			addMessage(BOT,"Your request could not be processed by some of the supported tasks:\n"+listTasks, null, NOT_INDEX);
+        								System.out.println("sendPost: Error getting ABOUT_STATISTICS");
+    			            		}
     			            	}else {
     			            		addMessage(BOT,"Your request could not be processed because the agent doesn't respond.", null, NOT_INDEX);
     			            	}
@@ -1599,6 +1781,8 @@ public class ChatView  {
 	public void processCode(Task task, int eventType, boolean getResponseCode) { // from runTask (AgentInterface)
 		setCurrentTask(task);
 		System.out.println("#runTask:"+task.getCode()+":"+task.getParameterByType(JavaConcept.METHOD.name()).getValue());
+		Log.d("#descriptionTask: "+task.getDescription());
+		Log.d("#instructionsTask: "+task.getInstructions());
     	ITextSelection iTextSelection = null;
     	if(eventType == EVENT_TYPE_MESSAGE) {
     		if(task.getParameterByType(JavaConcept.METHOD.name()) != null) {
@@ -1719,7 +1903,7 @@ public class ChatView  {
 		if(firstAttempt) {
 			messageInput = "You are a code Assistant that helps a software developer (User) in programming tasks. "
 					+ "If the task asks to generate code, only provide a brief explanation at the beginning and a "
-					+ "single code solution (no additional alternatives). Send only the method's code if the task "
+					+ "single code solution (no additional alternatives). Send a single method in the response (DO NOT DIVIDE INTO MULTIPLE METHODS) if the task "
 					+ "applies only to the method; do not send an entire class, unless the task specifically requests "
 					+ "to modify or create a whole class. Perform the next task:\n"
 						+getTaskDescriptionInstructions(task)+" for following code: \n```"+methodSource.strip()+"```.";
@@ -1741,7 +1925,10 @@ public class ChatView  {
 		interactionMessage = messageInput;
 		messageInput = Util.codeToLine(messageInput,true);
 		Interaction interactionU = new Interaction();
+		
 		interactionU.setRole(ChatView.USER);
+		//interactionU.setGitUser(gitUser.getUser());
+	    //interactionU.setGitEmail(gitUser.getMail());
 		interactionU.setText(interactionMessage);
 		interactionU.setChatMessage(chatMessage);
 		interactionU.setCode(interactionCode);
@@ -1756,10 +1943,14 @@ public class ChatView  {
 	    	    	currentResponse = response;
 	    		    Interaction interaction = new Interaction();
 	    		    currentInteraction = interaction;
+	    		    
 	    			interaction.setRole(ChatView.BOT);
 	    			interaction.setTaskCode(task.getCode());
 	    			interaction.setTaskName(task.getName());
 	    			Context context = new Context((IResource)editorPart.getEditorInput().getAdapter(IResource.class), textSelection);
+	    			if(context.getResource() != null && context.getResource().getCodeFragment() != null) {
+	    				context.getResource().getCodeFragment().setMethodName(methodDeclaration.getName().getIdentifier());
+	    			}
 	    			interaction.setContext(context);
 	    			interaction.setResult(new Result(new Agent(currentAgent.getName(), currentAgent.getTechnology(), currentAgent.isLLM()),false, false));
 	    			if(response != null) {
@@ -1785,6 +1976,8 @@ public class ChatView  {
 	    				    String codeHash = Hash.md5(body);
 	    				    System.out.println("body init:"+body);
 	    				    interaction.setHash(codeHash);
+	    				    //interactionU.setGitUser(gitUser.getUser());
+	    				    //interactionU.setGitEmail(gitUser.getMail());
 	    				    if(injectedSource!=null) {
 	    				    	Log.d("Injected source:\n"+injectedSource+"\n--");
 	    				    }else {
@@ -1793,7 +1986,12 @@ public class ChatView  {
 	    				    
 	    				    if(task.hasPreviousValidation()) {
 	    						if(!checkPreviousValidations(Resource.getSelectedResource() , injectedSource)) {
+	    							interaction.setPassedPreValidations(false);
+	    							interaction.getResult().setUsed(false);
+	    							chatView.addInteraction(interaction);
 	    							return;
+	    						}else {
+	    							interaction.setPassedPreValidations(true);
 	    						}
 	    					}
 	    			    	
@@ -1813,7 +2011,8 @@ public class ChatView  {
 	    							if(task.getCode().equals("GENERATE_JAVADOC_METHOD")) {
 	    								MethodReplacer.replaceMethodJavadoc(source, methodDeclaration.getName().getIdentifier(), finalResponse.getCode(), editorPart);
 	    							}else {
-	    								MethodReplacer.replaceMethod(source, methodDeclaration.getName().getIdentifier(), finalResponse.getCode(), editorPart);
+	    								MethodReplacer.replaceMethodBody(source, methodDeclaration.getName().getIdentifier(), finalResponse.getCode(), editorPart);
+	    								MethodReplacer.replaceMethod(doc.get(), methodDeclaration.getName().getIdentifier(), finalResponse.getCode(), editorPart);
 	    								
 	    							}
 	    							if(task.hasPostValidation()) {
@@ -2073,6 +2272,8 @@ public class ChatView  {
 		   IDocument doc = dp.getDocument(editor.getEditorInput());
 		   String commentsAnnotation = getCommentsAnnotation(currentAgent.getTechnology(), task, timestamp, true);
 		   String textTotal = commentsAnnotation+" "+text;
+		   Log.d("###replaceDocument");
+		   Log.d("---\n"+textTotal+"\n---");
 		   try {
 			   doc.replace(offset, length, textTotal);
 			   CodeFormatter cf = ToolFactory.createCodeFormatter(null);
@@ -2163,8 +2364,34 @@ public class ChatView  {
 		}
 		return project;
 	}
+	
+	public void addInteractionToMongoDB(Interaction interaction) {
+		
+		if (mongoUser != null && !mongoUser.isEmpty() &&
+			    mongoPassword != null && !mongoPassword.isEmpty() &&
+			    mongoHost != null && !mongoHost.isEmpty() &&
+			    mongoDatabase != null && !mongoDatabase.isEmpty() &&
+			    mongoAppName != null && !mongoAppName.isEmpty()) {
+			MongoDB mongoDB = new MongoDB();
+	    	mongoDB.setUser(mongoUser);
+	    	mongoDB.setPassword(mongoPassword);
+	    	mongoDB.setHost(mongoHost);
+	    	mongoDB.setDatabase(mongoDatabase);
+	    	mongoDB.setAppName(mongoAppName);
+	    	if(mongoDB.connect()) {
+	    		mongoDB.setupCollection();
+	 	        mongoDB.addDocument( interaction);
+	 	        mongoDB.getDocument(interaction.getTimestamp());
+	 	        mongoDB.close();
+	    	}
+	       
+		}
+		
+	}
 
 	public int addInteraction(Interaction interaction) {
+		
+		addInteractionToMongoDB(interaction);
 		chatData.addInteraction(interaction);
 		int index = chatData.getInteractions().size()-1;
 		if(interaction.getChatMessage() != null) {
@@ -2186,9 +2413,13 @@ public class ChatView  {
 		}
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		String jsonInteraction = gson.toJson(currentProjectInteractions);
-		Util.saveLog(pathWorkspace+"/"+projectName+"/", "log-"+timesession+".json", jsonInteraction);
+		Util.saveLog(pathWorkspace+"/"+projectName+"/", "log-"+timesession+".json", jsonInteraction, false);
 		if(statisticsView != null) {
-			statisticsView.updateStatistics();
+			try {
+				statisticsView.updateStatistics();
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
 		}
 		
 		return (index);
@@ -2243,6 +2474,10 @@ public class ChatView  {
 			try {
 				ITasksGroup iTasksGroup = (ITasksGroup) element.createExecutableExtension("class");
 				if(iTasksGroup != null) {
+					iTasksGroup.setId(element.getAttribute("id"));
+					iTasksGroup.setName(element.getAttribute("name"));
+					iTasksGroup.setDescription(element.getAttribute("description"));
+					Log.d("lenggth parameters -> "+iTasksGroup.getParameters().length);	
 					for (Parameter parameter : iTasksGroup.getParameters()) {
 						parametersDescription += parameter.getDescription()+" (otherwise "+parameter.getNoValue()+"), ";
 						parametersName += ", "+parameter.getName();
@@ -2254,6 +2489,7 @@ public class ChatView  {
 		}
 		
         tasksPrompt = "You are a code assistant that helps software developers in programming tasks to output JSON with the detected parameters: "+parametersName+".\n"
+    			+ "If the task is about a class, the requested task must explicitly mention the word 'class'; but if the task is about a method, the requested task must explicitly mention the word 'method'. "
     			+ "Please classify into one of the next categories (classification code in parentheses and in capital letter):\n"
     			+ "\n"
     			+ tasksString
@@ -2715,7 +2951,21 @@ public class ChatView  {
 					+messageInput;
     	}
     	contextConversation.addMessage("- User:"+messageInput);
-    	Response response = getAgent(true).processMessage(messageInput, temperature);
+    	Response response;
+    	if(store.getBoolean(PreferenceConstants.P_AGENTS_DINAMIC)) {
+    		String projectPath = getCurrentProject().getLocation().toString();
+    		AgentsStatistics agentsStatistics = new AgentsStatistics();
+    		String bestAgent = agentsStatistics.getData(projectPath);
+    		if(bestAgent !=null ) {
+    			currentAgent = getAgent(bestAgent);
+    		}else {
+    			currentAgent = getAgent(true);
+    		}
+    		
+        	response = currentAgent.processMessage(messageInput, temperature);
+    	}else{
+    		response = getAgent(true).processMessage(messageInput, temperature);
+    	}
     	contextConversation.addMessage("- Assistant:"+response.getText());
     	return response;
     }
@@ -3116,5 +3366,12 @@ public class ChatView  {
     	}else {
     		return task.getDescription();
     	}
+    }
+    
+    public String getStatisticsPrompt() {
+    	String prompt =  "Generate a class ExtractorStatistics that implements the Extractor interface and its getData method. This method should return a String value of a requested data item based on searching the available project logs. Consider the following contextual information: Example for the query: get the best agent based on pre-validations. ´´´java import java.util.ArrayList; import java.util.HashMap; import java.util.List; import java.util.Map; import com.google.gson.Gson; import com.google.gson.reflect.TypeToken; import caret.data.Extractor; import caret.data.Interaction; import caret.tool.Util; public class ExtractorStatistics implements Extractor{ public ExtractorStatistics (){ } /* * Query: get best agent based on acceptance */ @Override public String getData(String projectPath) { if (projectPath == null) { System.err.println(\"No project found.\"); return null; } List<Interaction> interactions = getIteractionsJSON(projectPath); if (interactions.isEmpty()) { System.err.println(\"No interactions found in \" + projectPath); return null; } Map<String, int[]> agentStats = new HashMap<>(); // [0] = total interactions, [1] = passed pre-validations for (Interaction interaction : interactions) { if (interaction.getResult() == null || interaction.getResult().getAgent() == null) continue; String agentName = interaction.getResult().getAgent().getName(); agentStats.putIfAbsent(agentName, new int[2]); agentStats.get(agentName)[0]++; // total if (interaction.isPassedPreValidations()) { agentStats.get(agentName)[1]++; // passed } } String bestAgent = null; double bestRate = -1.0; for (Map.Entry<String, int[]> entry : agentStats.entrySet()) { String agent = entry.getKey(); int total = entry.getValue()[0]; int passed = entry.getValue()[1]; double rate = (total > 0) ? (double) passed / total : 0.0; System.out.printf(\"Agent: %s | Passed: %d | Total: %d | Rate: %.2f%%%n\", agent, passed, total, rate * 100); if (rate > bestRate) { bestRate = rate; bestAgent = agent; } } return bestAgent; } public void print(String projectPath) { String bestAgent = getData(projectPath); System.out.println(\"# Best agent [Dynamic Mode]: \" + bestAgent); } } ´´´ Consider the following contextual information: ´´´java package caret.data; import java.util.ArrayList; import java.util.List; import com.google.gson.Gson; import com.google.gson.reflect.TypeToken; import caret.tool.Util; public interface Extractor { public default List<Interaction> getIteractionsJSON(String projectPath) { List<Interaction> totalInteractions = new ArrayList<Interaction> (); List <String> listInteractionsJSON = Util.readFilesFromDirectory(projectPath+\"/.log\", \".json\"); Gson gson = new Gson(); for (String interactionsJSON : listInteractionsJSON) { List<Interaction> interactions = gson.fromJson(interactionsJSON, new TypeToken<List<Interaction>>() {}.getType()); totalInteractions.addAll(interactions); } return totalInteractions; } /** * Returns the result of a query as a String. * @return query result in String format */ public String getData(String projectPath); } ´´´ ´´´java import java.util.Date; import caret.tasks.Parameter; import caret.vcs.GitUser; public class Interaction { private long timestamp; private String gitUser; private String gitEmail; private String role; private String text; private String code; private String hash; private Context context; private Result result; private String taskCode; private String taskName; private String targetParameterType; private String targetParameterName; private String chatMessage; private boolean passedPreValidations; public Interaction() { loadGitUser(); this.timestamp = new Date().getTime(); } public Interaction(String role, String text, String code, Context context, String taskCode) { loadGitUser(); this.timestamp = new Date().getTime(); this.role = role; this.text = text; this.code = code; this.context = context; this.taskCode = taskCode; } public Interaction(String role, String text, String code, Context context, String taskCode, long timestamp) { loadGitUser(); this.timestamp = timestamp; this.role = role; this.text = text; this.code = code; this.context = context; this.taskCode = taskCode; } private void loadGitUser() { GitUser _gitUser = new GitUser(); _gitUser.loadGitUser(); _gitUser.printGitUser(); if(_gitUser !=null && _gitUser.getUser() != null && _gitUser.getMail() != null) { this.gitUser = _gitUser.getUser(); this.gitEmail = _gitUser.getMail(); } } public long getTimestamp() { return timestamp; } public void setTimestamp(long timestamp) { this.timestamp = timestamp; } public String getRole() { return role; } public void setRole(String role) { this.role = role; } public String getText() { return text; } public void setText(String text) { this.text = text; } public String getCode() { return code; } public void setCode(String code) { this.code = code; } public Context getContext() { return context; } public void setContext(Context context) { this.context = context; } public Result getResult() { return result; } public void setResult(Result result) { this.result = result; } public String getTaskCode() { return taskCode; } public void setTaskCode(String taskCode) { this.taskCode = taskCode; } public String getTargetParameterType() { return targetParameterType; } public void setTargetParameterType(String targetParameterType) { this.targetParameterType = targetParameterType; } public String getTargetParameterName() { return targetParameterName; } public void setTargetParameterName(String targetParameterName) { this.targetParameterName = targetParameterName; } public String getTaskName() { return taskName; } public void setTaskName(String taskName) { this.taskName = taskName; } public String getChatMessage() { return chatMessage; } public void setChatMessage(String chatMessage) { this.chatMessage = chatMessage; } public String getHash() { return hash; } public void setHash(String hash) { this.hash = hash; } public String getGitUser() { return gitUser; } public void setGitUser(String gitUser) { this.gitUser = gitUser; } public String getGitEmail() { return gitEmail; } public void setGitEmail(String gitEmail) { this.gitEmail = gitEmail; } public boolean isPassedPreValidations() { return passedPreValidations; } public void setPassedPreValidations(boolean passedPreValidations) { this.passedPreValidations = passedPreValidations; } } ´´´ ´´´ java package caret.data; public class Result { boolean used; boolean createdResource; Agent agent; public Result(Agent agent, boolean used, boolean createdResource){ this.agent = agent; this.used = used; this.createdResource = createdResource; } public boolean isUsed() { return used; } public void setUsed(boolean used) { this.used = used; } public boolean isCreatedResource() { return createdResource; } public void setCreatedResource(boolean createdResource) { this.createdResource = createdResource; } public Agent getAgent() { return agent; } public void setAgent(Agent agent) { this.agent = agent; } } ´´´ And an example of the log is: ´´´JSON [ { ...}, { \"timestamp\": 1762932974747, \"gitUser\": \"devaptest\", \"gitEmail\": \"mail@mail.com\", \"role\": \"BOT\", \"text\": \"The method can be optimized by simplifying the Fibonacci calculation loop and improving variable updates for clarity and efficiency.\\n\\n\n"
+    			+ "java\\npublic int generateFibonacci(int n) {\\n    if (n \\u003c\\u003d 0) {\\n        throw new IllegalArgumentException(\\\"Invalid input. Fibonacci series starts with index 1.\\\");\\n    }\\n    if (n \\u003d\\u003d 1) \\n        return 0;\\n    if (n \\u003d\\u003d 2) \\n        return 1;\\n    int a \\u003d 0, b \\u003d 1;\\n    for (int i \\u003d 3; i \\u003c\\u003d n; i++) {\\n        int next \\u003d a + b;\\n        a \\u003d b;\\n        b \\u003d next;\\n    }\\n    return b;\\n}\\n\n"
+    			+ "\", \"code\": \"\\npublic int generateFibonacci(int n) {\\n if (n \\u003c\\u003d 0) {\\n throw new IllegalArgumentException(\\\"Invalid input. Fibonacci series starts with index 1.\\\");\\n }\\n if (n \\u003d\\u003d 1) \\n return 0;\\n if (n \\u003d\\u003d 2) \\n return 1;\\n int a \\u003d 0, b \\u003d 1;\\n for (int i \\u003d 3; i \\u003c\\u003d n; i++) {\\n int next \\u003d a + b;\\n a \\u003d b;\\n b \\u003d next;\\n }\\n return b;\\n}\", \"hash\": \"e3934d9de796f2d623547d1754ca1efd\", \"context\": { \"resource\": { \"projectName\": \"HiperPro\", \"fileName\": \"MathOperations.java\", \"fullPath\": \"/HiperPro/src/operation/MathOperations.java\", \"projectRelativePath\": \"src/operation/MathOperations.java\", \"codeFragment\": { \"startline\": 64, \"endline\": 64, \"offset\": 1684, \"length\": 370, \"methodName\": \"generateFibonacci\" } } }, \"result\": { \"used\": true, \"createdResource\": false, \"agent\": { \"name\": \"GPT\", \"technology\": \"GPT-4.1-MINI\", \"isLLM\": true } }, \"taskCode\": \"OPTIMISE_CODE\", \"taskName\": \"Optimise code\", \"targetParameterType\": \"METHOD\", \"targetParameterName\": \"generateFibonacci\", \"passedPreValidations\": true } ] ´´´ From this log, it is possible to obtain statistical information — for example, about the agent with the highest used rate (i.e., whose response was accepted). There is support for many LLM agents. The goal is, based on these data, to determine whether an open statistical query from a user is related to — or can be answered using — the data in the log. If it is possible give the code ABOUT_STATISTICS; otherwise, NO_STATISTICS. Then, you must response only a Java class that implements the interface. The response must be in JSON format as follows: ´´´JSON { \"classificationCode\": \"NO_STATISTICS\", \"javaClass\": \"\" } ´´ Respond (JSON) according to the instructions above for a following query:";
+    	return prompt;
     }
 }

@@ -266,5 +266,17 @@ public abstract class MoveListEditor extends FieldEditor {
 	protected List getList() {
 		return list;
 	}
+	
+	public void setEnabled(boolean enabled) {
+	    if (list != null && !list.isDisposed()) {
+	        list.setEnabled(enabled);
+	    }
+	    if (upButton != null && !upButton.isDisposed()) {
+	        upButton.setEnabled(enabled);
+	    }
+	    if (downButton != null && !downButton.isDisposed()) {
+	        downButton.setEnabled(enabled);
+	    }
+	}
 }
 

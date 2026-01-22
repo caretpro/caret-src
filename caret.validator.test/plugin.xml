@@ -4,7 +4,7 @@
    <extension
          point="caret.Validator">
       <Validator
-            class="caret.test.TestValidator"
+            class="caret.validator.test.TestValidator"
             id="Test Validator"
             name="Test Validator">
       </Validator>
@@ -12,9 +12,9 @@
    <extension
     point="org.eclipse.ui.propertyPages">
     <page
-        id="caret.test.property.TestPropertyPage"
+        id="caret.validator.test.property.TestPropertyPage"
         name="Test Validation"
-        class="caret.test.property.TestPropertyPage">
+        class="caret.validator.test.property.TestPropertyPage">
     </page>
 </extension>
 </plugin>

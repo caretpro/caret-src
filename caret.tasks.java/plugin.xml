@@ -4,7 +4,7 @@
    <extension
          point="caret.TaskGroup">
       <tasks
-            id="java"
+            id="javaTasks"
             name="java"
             description="java tasks"
             class="caret.tasks.java.JavaTasks">

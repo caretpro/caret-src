@@ -6,6 +6,8 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.texteditor.IDocumentProvider;
@@ -233,9 +235,11 @@ public class MethodReplacer {
                     // Replace the existing body with the new body
                 	System.out.println("### Method ASTNode.copySubtree:\n"+newMethod.getBody()+"\n---");
 
-                    Block newBody = (Block) ASTNode.copySubtree(method.getAST(), newMethod.getBody());
-                    //method.setBody(newBody);
-                    rewriter.set(method, MethodDeclaration.BODY_PROPERTY, newBody, null);
+                	
+                    //Block newBody = (Block) ASTNode.copySubtree(method.getAST(), newMethod.getBody());// delete comments
+                    //method.setBody(newBody);//old 
+                	//rewriter.set(method, MethodDeclaration.BODY_PROPERTY, newBody, null);
+                    
                     
                  // Add a Javadoc comment if not already present
                     Javadoc existingJavadoc = method.getJavadoc();
@@ -281,7 +285,7 @@ public class MethodReplacer {
             ITextEditor textEditor = (ITextEditor) editorPart;
             IDocumentProvider documentProvider = textEditor.getDocumentProvider();
             IDocument document = documentProvider.getDocument(textEditor.getEditorInput());
-
+            
             try {
                 TextEdit edits = rewriter.rewriteAST(document, null);
                 edits.apply(document); // Apply edits directly to the document in the editor
@@ -296,6 +300,62 @@ public class MethodReplacer {
 
         return null; // Return null if the editor is not a text editor
     }
+	
+	public static String replaceMethodBody(
+	        String sourceCode,
+	        String methodName,
+	        String methodCode,
+	        IEditorPart editorPart) {
+
+	    ASTParser parser = ASTParser.newParser(AST.JLS17);
+	    parser.setKind(ASTParser.K_COMPILATION_UNIT);
+	    parser.setSource(sourceCode.toCharArray());
+	    parser.setResolveBindings(false);
+
+	    CompilationUnit cu = (CompilationUnit) parser.createAST(null);
+	    AST ast = cu.getAST();
+	    ASTRewrite rewriter = ASTRewrite.create(ast);
+
+	    cu.accept(new ASTVisitor() {
+	        @Override
+	        public boolean visit(MethodDeclaration method) {
+	            if (method.getName().getIdentifier().equals(methodName)) {
+
+	                ASTNode placeholder =
+	                        rewriter.createStringPlaceholder(
+	                                methodCode,
+	                                ASTNode.METHOD_DECLARATION);
+
+	                rewriter.replace(method, placeholder, null);
+	            }
+	            return super.visit(method);
+	        }
+	    });
+
+	    if (editorPart instanceof ITextEditor) {
+	        ITextEditor textEditor = (ITextEditor) editorPart;
+	        IDocument document =
+	                textEditor.getDocumentProvider()
+	                          .getDocument(textEditor.getEditorInput());
+
+            StyledText styledText = (StyledText) textEditor.getAdapter(Control.class);
+            int topIndex = styledText.getTopIndex();
+            int caretOffset = styledText.getCaretOffset();
+            
+	        try {
+	            TextEdit edits = rewriter.rewriteAST(document, null);
+	            edits.apply(document);
+                styledText.setTopIndex(topIndex);
+                styledText.setCaretOffset(caretOffset);
+	            return document.get();
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    return null;
+	}
+
     
     public static MethodDeclaration parseMethodDeclaration(String source) {
         ASTParser parser = ASTParser.newParser(AST.JLS17);

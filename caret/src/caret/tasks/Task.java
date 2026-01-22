@@ -32,6 +32,16 @@ public class Task {
 		this.commandId = handler;
 	}
 	
+	public Task(String code, String name, String description, String instructions, Parameter[] parameters, String bind, String handler) {
+		this.code = code;
+		this.name = name;
+		this.description = description;
+		this.instructions = instructions;
+		this.parameters = parameters;
+		this.bind = bind;
+		this.commandId = handler;
+	}
+	
 	public Task(String code, String name, String description, String bind, String handler) {
 		this.code = code;
 		this.name = name;

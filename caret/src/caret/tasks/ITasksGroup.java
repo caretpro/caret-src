@@ -8,6 +8,12 @@ public interface ITasksGroup {
 	
 	public String getDescription();
 	
+	public void setId(String id);
+	
+	public void setName(String name);
+	
+	public void setDescription(String description);
+	
 	public Task [] getTasks();
 	
 	public Task getTask (String taskCode);

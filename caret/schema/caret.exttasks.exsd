@@ -52,14 +52,14 @@
          <choice minOccurs="0" maxOccurs="unbounded">
             <element ref="task"/>
          </choice>
-         <attribute name="id" type="string">
+         <attribute name="id" type="string" use="required">
             <annotation>
                <documentation>
                   
                </documentation>
             </annotation>
          </attribute>
-         <attribute name="name" type="string">
+         <attribute name="name" type="string" use="required">
             <annotation>
                <documentation>
                   
@@ -79,7 +79,7 @@
                   
                </documentation>
                <appinfo>
-                  <meta.attribute kind="java" basedOn=":caret.tasks.TasksInterface"/>
+                  <meta.attribute kind="java" basedOn="caret.tasks.ATasksGroup:"/>
                </appinfo>
             </annotation>
          </attribute>
@@ -140,6 +140,20 @@
             </annotation>
          </attribute>
          <attribute name="instructions" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="previousValidation" type="boolean">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="postValidation" type="boolean">
             <annotation>
                <documentation>
                   

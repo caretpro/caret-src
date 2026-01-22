@@ -29,6 +29,7 @@ import caret.data.Agent;
 import caret.data.Context;
 import caret.data.Interaction;
 import caret.data.Result;
+import caret.tasks.JavaConcept;
 import caret.tasks.Task;
 import caret.tool.Util;
 
@@ -204,6 +205,9 @@ public class ResponseDialog extends Dialog {
 		userInteraction.setText("Try again. Give a different answer");
 		userInteraction.setCode(null);
 		userInteraction.setTaskCode(task.getCode());
+		userInteraction.setTaskName(task.getName());
+		userInteraction.setTargetParameterType(JavaConcept.METHOD.name());
+		userInteraction.setTargetParameterName(context.getResource().getCodeFragment().getMethodName());
 		userInteraction.setContext(context);
 		chatView.addInteraction(userInteraction);
 		
@@ -211,6 +215,9 @@ public class ResponseDialog extends Dialog {
 	    Interaction botInteraction = new Interaction();
 		botInteraction.setRole(ChatView.BOT);
 		botInteraction.setTaskCode(task.getCode());
+		botInteraction.setTaskName(task.getName());
+		botInteraction.setTargetParameterType(JavaConcept.METHOD.name());
+		botInteraction.setTargetParameterName(context.getResource().getCodeFragment().getMethodName());
 		botInteraction.setContext(context);
 		botInteraction.setResult(new Result(new Agent(chatView.getCurrentAgent().getName(), chatView.getCurrentAgent().getTechnology(), chatView.getCurrentAgent().hasIntent()),false, false));
 		if(response != null) {

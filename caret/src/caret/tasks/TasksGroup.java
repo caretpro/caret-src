@@ -76,7 +76,7 @@ public class TasksGroup implements ITasksGroup {
 
 	@Override
 	public void runTask(Task task, int eventType) {
-		System.out.println("#@runTask: "+task.getCode()+", eventType: "+eventType);
+		System.out.println("##@runTask: "+task.getCode()+", eventType: "+eventType);
 		chatView.processCode(task, eventType, true);
 	}
 	

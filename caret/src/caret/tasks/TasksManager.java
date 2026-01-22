@@ -182,6 +182,11 @@ public class TasksManager {
 	public static Task getTask(IConfigurationElement element) {
 		Task task = new Task (element.getAttribute("code"),element.getAttribute("name"),element.getAttribute("description"),
 				element.getAttribute("bind"),element.getAttribute("commandId"));
+		if(element.getAttribute("instructions")!=null) {
+			task.setInstructions(element.getAttribute("instructions"));
+		}
+		task.setPreviousValidation(Boolean.parseBoolean(element.getAttribute("previousValidation")));
+		task.setPostValidation(Boolean.parseBoolean(element.getAttribute("postValidation")));
 		IConfigurationElement[] parameterElements = element.getChildren("parameter");
 		Parameter [] parameters = new Parameter [parameterElements.length];
 		for (int i = 0; i < parameterElements.length; i++) {

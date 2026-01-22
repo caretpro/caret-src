@@ -10,7 +10,9 @@
                bind="CONTEXTUAL"
                code="CONVERT_LAMBDAS"
                description="Convert code using lambdas. This task converts the body code of the method"
-               name="Convert code using lambdas">
+               name="Convert code using lambdas"
+               postValidation="true"
+               previousValidation="true">
             <parameter
                   description="method name"
                   hasSource="true"
@@ -42,7 +44,9 @@
                bind="CONTEXTUAL"
                code="COMPLETE_METHOD"
                description="Complete java method. The requested task must explicitly mention the word METHOD."
-               name="Complete java method">
+               name="Complete java method"
+               postValidation="true"
+               previousValidation="true">
             <parameter
                   description="Method Name"
                   hasSource="true"
@@ -74,7 +78,9 @@
                bind="CONTEXTUAL"
                code="COMPLETE_CLASS"
                description="Complete java class. The requested task must explicitly mention the word CLASS."
-               name="Complete java class">
+               name="Complete java class"
+               postValidation="true"
+               previousValidation="true">
             <parameter
                   description="Class Name"
                   hasSource="true"

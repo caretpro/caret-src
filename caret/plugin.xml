@@ -39,6 +39,18 @@
             category="caret.preferences.ChatbotPreferencePage"
             name="Validators">
       </page>
+      <page
+            class="caret.preferences.VCSPreferencePage"
+            id="caret.preferences.VCSPreferencePage"
+            category="caret.preferences.ChatbotPreferencePage"
+            name="Version control">
+      </page>
+      <page
+            category="caret.preferences.ChatbotPreferencePage"
+            class="caret.preferences.MongoDBPreferencePage"
+            id="caret.preferences.MongoDBPreferencePage"
+            name="MongoDB">
+      </page>
    </extension>
    <extension
          point="org.eclipse.core.runtime.preferences">

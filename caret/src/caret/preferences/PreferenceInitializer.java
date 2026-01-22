@@ -23,6 +23,7 @@ import caret.tasks.Task;
 import caret.tasks.TasksGroup;
 import caret.tasks.TasksManager;
 import caret.validator.ValidatorInterface;
+import caret.vcs.GitUser;
 
 /**
  * Class used to initialize default preference values.
@@ -44,9 +45,18 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 	
 	public void initializeDefaultPreferences() {
 		System.out.println("## INITIALIZER CHATBOT ");
+		GitUser gitUser = new GitUser();
+        gitUser.loadGitUser();
 		IPreferenceStore store = Activator.getDefault().getPreferenceStore();
 		store.setDefault(PreferenceConstants.P_PATH_SAVE, System.getProperty("user.home"));
 		store.setDefault(PreferenceConstants.P_AGENT, "GPT");
+		if(gitUser.getUser()!=null) {
+			store.setDefault(PreferenceConstants.P_GIT_USER, gitUser.getUser());
+		}
+		if(gitUser.getMail()!=null) {
+			store.setDefault(PreferenceConstants.P_GIT_MAIL, gitUser.getMail());
+		}
+		
 		String listAgents = "";
 		IExtensionRegistry reg	= Platform.getExtensionRegistry();
 		IConfigurationElement [] extensions = reg.getConfigurationElementsFor(ChatView.EXTENSION_POINT_AGENT);

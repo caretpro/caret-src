@@ -50,9 +50,14 @@ Require-Bundle: org.eclipse.ui,
  org.apiguardian.api,
  org.hamcrest.core,
  org.opentest4j,
- org.apache.commons.commons-io;bundle-version="2.16.1"
+ org.apache.commons.commons-io;bundle-version="2.16.1",
+ org.eclipse.jgit;bundle-version="7.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Automatic-Module-Name: caret
 Import-Package: jakarta.annotation,
  jakarta.inject
 Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .,
+ lib/bson-5.5.1.jar,
+ lib/mongodb-driver-core-5.5.1.jar,
+ lib/mongodb-driver-sync-5.5.1.jar

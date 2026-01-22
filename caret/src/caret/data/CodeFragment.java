@@ -6,7 +6,8 @@ public class CodeFragment {
 	int endline;
 	int offset;
 	int length;
-	
+	String methodName;
+
 	public CodeFragment(ITextSelection iTextSelection) {
 		this.startline = iTextSelection.getStartLine();
 		this.endline = iTextSelection.getEndLine();
@@ -44,5 +45,13 @@ public class CodeFragment {
 
 	public void setLength(int length) {
 		this.length = length;
+	}
+	
+	public String getMethodName() {
+		return methodName;
+	}
+
+	public void setMethodName(String methodName) {
+		this.methodName = methodName;
 	}
 }

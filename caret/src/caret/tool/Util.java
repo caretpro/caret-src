@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +35,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import caret.data.Interaction;
+import caret.vcs.GitUser;
 
 import com.google.gson.JsonElement;
 public class Util {
@@ -148,19 +150,27 @@ public class Util {
 	    return true;
 	}
 	
-	public static boolean saveLog(String path, String filename, String content) {
+	public static boolean saveLog(String path, String filename, String content, boolean append) {
 	    BufferedWriter bw = null;
 	    FileWriter fw = null;
 	    try {
+	    	GitUser gitUser = new GitUser();
+	        gitUser.loadGitUser();
 	        // Create the .log directory inside the given path
-	        File logDir = new File(path, ".log");
+	        String logPath;
+	        if(gitUser.getUser()!=null) {
+	        	logPath = ".log"+File.separator+gitUser.getUser();
+	        }else {
+	        	logPath = ".log"+File.separator+"default_"+UUID.randomUUID().toString().replace("-", "");
+	        }
+	        File logDir = new File(path, logPath);
 	        if (!logDir.exists()) {
 	            logDir.mkdirs(); // Create directory if it doesn't exist
 	        }
 
 	        // Create the log file inside the .log directory
 	        File file = new File(logDir, filename);
-	        fw = new FileWriter(file, false); // false -> overwrite the file
+	        fw = new FileWriter(file, append); // false -> overwrite the file
 	        bw = new BufferedWriter(fw);
 	        bw.write(content);
 	        System.out.println("Saved log: " + file.getAbsolutePath());
@@ -503,7 +513,7 @@ public class Util {
         return lineEndOffset - newCode.getOffsetAtLine(lineIndex);
     }
     
-    public static List<String> readJsonFilesFromDirectory(String directoryPath) {
+    public static List<String> readFilesFromDirectory(String directoryPath, String pattern) {
         List<String> jsonContents = new ArrayList<>();
         File directory = new File(directoryPath);
 
@@ -512,27 +522,36 @@ public class Util {
             return jsonContents;
         }
 
-        // Filter to get only .json files in the root directory
-        File[] jsonFiles = directory.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
+        processDirectoryRecursively(directory, jsonContents, pattern);
 
-        if (jsonFiles != null) {
-            for (File jsonFile : jsonFiles) {
-                try (BufferedReader br = new BufferedReader(new FileReader(jsonFile))) {
+        return jsonContents;
+    }
+
+    private static void processDirectoryRecursively(File dir, List<String> jsonContents, String pattern) {
+        File[] files = dir.listFiles();
+        if (files == null) return;
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                
+                processDirectoryRecursively(file, jsonContents, pattern);
+            } else if (file.isFile() && file.getName().toLowerCase().endsWith(pattern)) {
+               
+                try (BufferedReader br = new BufferedReader(new FileReader(file))) {
                     StringBuilder content = new StringBuilder();
                     String line;
                     while ((line = br.readLine()) != null) {
                         content.append(line).append(System.lineSeparator());
                     }
-                    jsonContents.add(content.toString().trim()); // Add file content to the list
+                    jsonContents.add(content.toString().trim());
                 } catch (Exception e) {
-                    System.err.println("Error reading file: " + jsonFile.getName());
+                    System.err.println("Error reading file: " + file.getAbsolutePath());
                     e.printStackTrace();
                 }
             }
         }
-
-        return jsonContents;
     }
+
     
     public static MethodPosition findMethodPosition2(String methodSource, String sourceClass) {
         try {
@@ -645,5 +664,21 @@ public class Util {
         e.printStackTrace(pw);
         return sw.toString();
     }
+    
+    public static int clampToPercentageRange(int value) {
+        return Math.max(0, Math.min(100, value));
+    }
+    
+    public static int getRandomNumberUnder100() {
+        return (int) (Math.random() * 100); // generates 0 to 99
+    }
 
+    public static String normalizePath(String path) {
+    	if (path == null) return null;
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            path = path.replace("\\", "/");
+        }
+        return path;
+    }
 }

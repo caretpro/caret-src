@@ -27,7 +27,7 @@ public class AgentGemini implements AgentInterface{
 	private String ID = "Gemini";
 	private String name = "Gemini";
 	private String technology = "Gemini";
-	private String key="";
+	private String key=""; 
 	private String url="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 	private String model="gemini-2.0-flash";
 	private float defaultTemperature = 0.7F;

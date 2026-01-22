@@ -3,6 +3,7 @@ package caret.validator.test;
 import caret.ChatView;
 import caret.project.java.JavaProject;
 import caret.tool.Log;
+import caret.tool.Util;
 import caret.validator.test.property.TestPropertyConstants;
 
 import org.eclipse.core.runtime.IPath;
@@ -91,15 +92,19 @@ public class TestRunner implements Runnable {
     	
 		Class<?>[] clazzes = null;
 		ScopedPreferenceStore preferenceStore = new ScopedPreferenceStore(new ProjectScope(project), Activator.PLUGIN_ID);
-		String testpath = preferenceStore.getString(TestPropertyConstants.PROPERTY_TEST_FOLDER);
+		String testpath =  preferenceStore.getString(TestPropertyConstants.PROPERTY_TEST_FOLDER);
+		testpath = Util.normalizePath(testpath);
 		
     	List <String> srcPaths = JavaProject.getSourcePaths(project);
+    	System.out.println("---srcPaths:"+srcPaths);
+    	System.out.println("---testpath:"+testpath);
     	System.out.println("---current project:"+project.getName());
     	String rootPathTest =findRootPathInLargePath(srcPaths, testpath);
     	System.out.println("---current project src:"+rootPathTest);
     	
 		String regex = preferenceStore.getString(TestPropertyConstants.PROPERTY_TEST_REGEX);
 		String testclass = preferenceStore.getString(TestPropertyConstants.PROPERTY_TEST_CLASS);
+		testclass = Util.normalizePath(testclass);
 		boolean enabledTestpath = preferenceStore.getBoolean(TestPropertyConstants.PROPERTY_ENABLE_TEST_FOLDER);
 		boolean enabledTestRegex = preferenceStore.getBoolean(TestPropertyConstants.PROPERTY_ENABLE_TEST_REGEX);
 		boolean enabledTestClass = preferenceStore.getBoolean(TestPropertyConstants.PROPERTY_ENABLE_TEST_CLASS);
