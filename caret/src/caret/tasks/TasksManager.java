@@ -15,6 +15,7 @@ import caret.Activator;
 import caret.ChatView;
 import caret.preferences.PTask;
 import caret.preferences.PreferenceConstants;
+import caret.tool.Log;
 
 public class TasksManager {
 	
@@ -99,6 +100,7 @@ public class TasksManager {
 		IConfigurationElement [] extensions = reg.getConfigurationElementsFor(ChatView.EXTENSION_POINT_TASKS);
 		for (int i = 0; i < extensions.length; i++) {
 			IConfigurationElement element = extensions[i];
+			System.out.println("PLUGIN.getID:"+element.getAttribute("id"));
 			try {
 					iTasksGroup = getITasksGroup(element);
 					for (Task task : iTasksGroup.getTasks()) {
@@ -112,6 +114,33 @@ public class TasksManager {
 			}			
 		}
 		return iTasksGroup;
+    }
+	
+	public static String findPluginId(String taskCode) {
+		ITasksGroup iTasksGroup = null;
+    	IExtensionRegistry reg	= Platform.getExtensionRegistry();
+		IConfigurationElement [] extensions = reg.getConfigurationElementsFor(ChatView.EXTENSION_POINT_TASKS);
+		for (int i = 0; i < extensions.length; i++) {
+			IConfigurationElement element = extensions[i];
+			String pluginId = element.getContributor().getName();
+			System.out.println("PLUGIN.getID:"+pluginId);
+			try {
+					iTasksGroup = getITasksGroup(element);
+					System.out.println("find1");
+					for (Task task : iTasksGroup.getTasks()) {
+						if(task.getCode().equals(taskCode)) {
+							System.out.println("find2: "+task.getCode()+"-"+taskCode);
+							return pluginId;
+						}else {
+							System.out.println("find3: "+task.getCode()+"-"+taskCode);
+						}
+					}
+			
+			} catch (Exception e) {
+				System.out.println("ERROR findITasksGroup:"+e.getMessage());
+			}			
+		}
+		return null;
     }
 	
 	public static Task getTask(String taskCode) {
@@ -156,6 +185,7 @@ public class TasksManager {
 		IConfigurationElement [] extensions = reg.getConfigurationElementsFor(chatView.EXTENSION_POINT_TASKS);
 		for (int i = 0; i < extensions.length; i++) {
 			IConfigurationElement element = extensions[i];
+			System.out.println("PLUGIN.getID:"+element.getAttribute("id"));
 			if(element.getAttribute("id").equals(id)) {
 				ITasksGroup iTasksGroup = getITasksGroup(element);
 				if(iTasksGroup != null) {

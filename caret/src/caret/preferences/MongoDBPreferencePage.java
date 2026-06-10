@@ -16,28 +16,10 @@ public class MongoDBPreferencePage extends FieldEditorPreferencePage implements 
 
     @Override
     public void createFieldEditors() {
-        // MongoDB username
+        //connection string
         addField(new StringFieldEditor(
-                PreferenceConstants.P_MONGO_USER, 
-                "MongoDB user:", 
-                getFieldEditorParent()));
-
-        // MongoDB password (string field, not masked)
-        addField(new StringFieldEditor(
-                PreferenceConstants.P_MONGO_PASSWORD, 
-                "MongoDB password:", 
-                getFieldEditorParent()));
-
-        // Cluster host (example: caret-cluster.wefhfh9.mongodb.net)
-        addField(new StringFieldEditor(
-                PreferenceConstants.P_MONGO_HOST, 
-                "Host:", 
-                getFieldEditorParent()));
-
-        // appName parameter for connection string
-        addField(new StringFieldEditor(
-                PreferenceConstants.P_MONGO_APPNAME, 
-                "App name:", 
+                PreferenceConstants.P_MONGO_URI, 
+                "URI (Connection String):", 
                 getFieldEditorParent()));
         
         // Optional database name

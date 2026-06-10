@@ -128,9 +128,17 @@
          <attribute name="bind" type="string" use="required">
             <annotation>
                <documentation>
-                  MENU, CONTEXTUAL or NONE
+               
                </documentation>
             </annotation>
+            <simpleType>
+               <restriction base="string">
+                  <enumeration value="CONTEXTUAL">
+                  </enumeration>
+                  <enumeration value="NONE">
+                  </enumeration>
+               </restriction>
+            </simpleType>
          </attribute>
          <attribute name="commandId" type="string">
             <annotation>
@@ -203,7 +211,7 @@
          <attribute name="parameterType" use="required">
             <annotation>
                <documentation>
-                  CLASS, INTERFACE, SUBCLASS, TESTCLASS or METHOD
+                  
                </documentation>
             </annotation>
             <simpleType>

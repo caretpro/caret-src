@@ -22,17 +22,23 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.StyledCellLabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.custom.TableEditor;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -40,6 +46,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ProgressBar;
@@ -47,7 +54,10 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.ToolTip;
+import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 
@@ -70,6 +80,7 @@ import caret.tool.Hash;
 import caret.tool.Log;
 import caret.tool.Tuple;
 import caret.tool.Util;
+import caret.ui.TasksPluginDialog;
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -80,13 +91,13 @@ import java.util.regex.Pattern;
 
 public class StatisticsViewGlobal {
 
-	private static StatisticsViewGlobal statisticsViewGlobal;
+    private static StatisticsViewGlobal statisticsViewGlobal;
     TreeViewer treeViewer;
     int requestedTasks = 0;
     int acceptedTasks = 0;
     int rejectedTasks = 0;
     int survivalTasks = 0;
-    int preservationTasks = 6;
+    int preservationTasks = 0;
     int undoneTasks = 0;
     Label label;
     static String ELEMENT_PACKAGE = "package";
@@ -106,31 +117,31 @@ public class StatisticsViewGlobal {
     private int selectedIndex;
     
     public static StatisticsViewGlobal getInstance() {
-    	return statisticsViewGlobal;
+        return statisticsViewGlobal;
     }
     
     @PostConstruct
     public void createPartControl(Composite parent) {
-    	
-    	this.statisticsViewGlobal = this;
-    	Composite composite = new Composite(parent, SWT.NONE);
+        
+        this.statisticsViewGlobal = this;
+        Composite composite = new Composite(parent, SWT.NONE);
         composite.setLayout(new GridLayout(1, false)); // 1 column for the label and tree viewer
         List<Task> tasks = TasksManager.getPreferenceTasks(); 
-		String listTasks = ""; 
-		int totalClasses = 0;
-		int totalMethods = 0;
-		int totalPackages = 0;
-		try {
-			totalClasses = ProjectAnalyzer.getTotalClasses(getCurrentProject());
-			totalMethods = ProjectAnalyzer.getTotalMethods(getCurrentProject());
-			totalPackages = ProjectAnalyzer.getTotalPackages(getCurrentProject());
-		} catch (JavaModelException e) {
-			e.printStackTrace();
-		}
-		
-		for (Task itemTask : tasks) {
-			listTaskCounter.put(itemTask.getName(), 0);
-		}
+        String listTasks = ""; 
+        int totalClasses = 0;
+        int totalMethods = 0;
+        int totalPackages = 0;
+        try {
+            totalClasses = ProjectAnalyzer.getTotalClasses(getCurrentProject());
+            totalMethods = ProjectAnalyzer.getTotalMethods(getCurrentProject());
+            totalPackages = ProjectAnalyzer.getTotalPackages(getCurrentProject());
+        } catch (JavaModelException e) {
+            e.printStackTrace();
+        }
+        
+        for (Task itemTask : tasks) {
+            listTaskCounter.put(itemTask.getName(), 0);
+        }
         List<Category> categories = getCategoriesByTasks();
         Color colorComposite = composite.getBackground();
         Color colorDarkComposite = new Color(Display.getCurrent(), 247, 247, 247);
@@ -168,7 +179,7 @@ public class StatisticsViewGlobal {
         Combo combo = new Combo(composite, SWT.DROP_DOWN | SWT.READ_ONLY);
         combo.setItems(new String[]{"View by Tasks", "View by Agent", "View by Project", "View by Coverage", "View by User"});
         combo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        combo.select(1);
+        combo.select(0);
         // Add a listener to detect item selection
         combo.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -177,46 +188,47 @@ public class StatisticsViewGlobal {
                 if (selectedIndex != -1) {
                     String selectedItem = combo.getItem(selectedIndex);
                     if(selectedIndex == 0) {// View by task
-                    	table.setVisible(false);
+                        table.setVisible(false);
                         tableData.exclude = true;
-                    	treeViewer.getTree().setVisible(true); 
+                        treeViewer.getTree().setVisible(true); 
                         treeViewerData.exclude = false;
-                		updateStatistics();
-                	}
+                        updateStatistics();
+                    }
                     if(selectedIndex == 1) {// View by agent
-                    	table.setVisible(false);
+                        table.setVisible(false);
                         tableData.exclude = true;
-                    	treeViewer.getTree().setVisible(true);
+                        treeViewer.getTree().setVisible(true);
                         treeViewerData.exclude = false;
-                		updateStatistics();
-                	}
+                        updateStatistics();
+                    }
                     if(selectedIndex == 2) {// View by project
-                    	table.setVisible(false);
+                        table.setVisible(false);
                         tableData.exclude = true;
-                    	treeViewer.getTree().setVisible(true);
+                        treeViewer.getTree().setVisible(true);
                         treeViewerData.exclude = false;
-                    	treeViewer.setInput(getCategoriesbyProjectStructure());
-                	}
+                        treeViewer.setInput(getCategoriesbyProjectStructure());
+                    }
                     if(selectedIndex == 3) { // View by coverage
-                    	treeViewer.getTree().setVisible(false);
+                        treeViewer.getTree().setVisible(false);
                         treeViewerData.exclude = true;
-                    	table.setVisible(true);
+                        table.setVisible(true);
                         tableData.exclude = false;
-                	}
+                        getCovertureByTasks();
+                    }
                     if(selectedIndex == 4) { // View by user
-                    	table.setVisible(false);
+                        table.setVisible(false);
                         tableData.exclude = true;
-                    	treeViewer.getTree().setVisible(true);
+                        treeViewer.getTree().setVisible(true);
                         treeViewerData.exclude = false;
-                		updateStatistics();
-                	}
+                        updateStatistics();
+                    }
                     parent.layout(true, true); 
                     System.out.println("Selected item: " + selectedItem);
                 }
             }
         });
         
-		Composite radioComposite = new Composite(composite, SWT.NONE);
+        Composite radioComposite = new Composite(composite, SWT.NONE);
         radioComposite.setLayout(new GridLayout(3, false)); 
         radioComposite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
         Button acceptedButton = new Button(radioComposite, SWT.RADIO);
@@ -231,67 +243,119 @@ public class StatisticsViewGlobal {
         treeViewerData = new GridData(SWT.FILL, SWT.FILL, true, true);
         treeViewer.getControl().setLayoutData(treeViewerData);
         treeViewer.setContentProvider(new StatisticsContentProvider()); 
-        treeViewer.setLabelProvider(new LabelProvider() {
-        	Image iconList = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/history_list.png"));
-        	Image iconPackage = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/package_obj.png"));
-        	Image iconClass = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/file_mode.png"));
-        	Image iconUser = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/user.png"));
-        	Image iconMethod = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/public_co.png"));
-        	Image iconDefault = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/info.png"));
-        	@Override
-            public String getText(Object element) {
-                return element.toString();
-            }
+        
+        Image iconDownload = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/download.png"));
+        treeViewer.setLabelProvider(new StyledCellLabelProvider() {
+            Image iconList = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/history_list.png"));
+            Image iconPackage = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/package_obj.png"));
+            Image iconClass = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/file_mode.png"));
+            Image iconUser = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/user.png"));
+            Image iconMethod = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/public_co.png"));
+            Image iconDefault = new Image(Display.getDefault(), getClass().getResourceAsStream("/icons/info.png"));
+
             @Override
-            public Image getImage(Object element) {
-            	if(element != null) {
-            		if (element instanceof Category) {
-            			Category category = (Category) element;
-            			if(category.getElementType() != null){
-            				if(category.getElementType().equals(ELEMENT_PACKAGE)) {
-                    			//System.out.println("###CARET STATISTICS iconPackage:"+((Category) element).getElementType()+":"+category.getName());
-                    			return iconPackage;
-                    		}
-                    		if(category.getElementType().equals(ELEMENT_CLASS)) {
-                    			//System.out.println("###CARET STATISTICS iconClass:"+((Category) element).getElementType()+":"+category.getName());
-                    			return iconClass;
-                    		}
-                    		if(category.getElementType().equals(ELEMENT_USER)) {
-                    			//System.out.println("###CARET STATISTICS iconClass:"+((Category) element).getElementType()+":"+category.getName());
-                    			return iconUser;
-                    		}
-                    		if(category.getElementType().equals(ELEMENT_METHOD)) {
-                    			//System.out.println("###CARET STATISTICS iconMethod:"+((Category) element).getElementType()+":"+category.getName());
-                    			return iconMethod;
-                    		}
-                    		if(category.getElementType().equals(ELEMENT_TASK)) {
-                    			return iconList;
-                    		}
-            			}
-                	}
-            	}
-            	return iconDefault;
+            public void update(ViewerCell cell) {
+                Object element = cell.getElement();
+                cell.setText(element.toString());
+                
+                if (element instanceof Category) {
+                    Category category = (Category) element;
+                    String type = category.getElementType();
+                    
+                    if (ELEMENT_PACKAGE.equals(type)) cell.setImage(iconPackage);
+                    else if (ELEMENT_CLASS.equals(type)) cell.setImage(iconClass);
+                    else if (ELEMENT_USER.equals(type)) cell.setImage(iconUser);
+                    else if (ELEMENT_METHOD.equals(type)) cell.setImage(iconMethod);
+                    else if (ELEMENT_TASK.equals(type)) cell.setImage(iconList);
+                    else cell.setImage(iconDefault);
+                }
+                super.update(cell);
+                cell.getControl().redraw(cell.getBounds().x, cell.getBounds().y, 
+                        cell.getBounds().width, cell.getBounds().height, false);
             }
+
+            @Override
+            protected void paint(Event event, Object element) {
+                super.paint(event, element); 
+
+                if (element instanceof Category) {
+                    Category category = (Category) element;
+                    if (ELEMENT_TASK.equals(category.getElementType())&& category.getData("installed").equals("NOT") ) {
+                        TreeItem item = (TreeItem) event.item;
+                        Rectangle textBounds = item.getTextBounds(0); 
+                        int textWidth = event.gc.textExtent(category.getName()).x;
+                        int x = textBounds.x + textWidth + 12;
+                        int y = event.y + (event.height - 16) / 2;
+
+                        Rectangle oldClipping = event.gc.getClipping();
+                        event.gc.setClipping((Rectangle) null); 
+
+                        event.gc.drawImage(iconDownload, x, y);
+
+                        event.gc.setClipping(oldClipping);
+                        
+                        item.setData("iconX", x);
+                    }
+                }
+            }
+
             @Override 
             public void dispose() {
-            	if(!iconList.isDisposed()) {
-            		iconList.dispose();
-            	}
-            	if(!iconPackage.isDisposed()) {
-            		iconPackage.dispose();
-            	}
-            	if(!iconClass.isDisposed()) {
-            		iconClass.dispose();
-            	}
-            	if(!iconUser.isDisposed()) {
-            		iconUser.dispose();
-            	}
-            	if(!iconMethod.isDisposed()) {
-            		iconMethod.dispose();
-            	}
-            	if(!iconDefault.isDisposed()) {
-            		iconDefault.dispose();
-            	}
+                Image[] icons = {iconList, iconPackage, iconClass, iconUser, iconMethod, iconDefault};
+                for (Image img : icons) {
+                    if (img != null && !img.isDisposed()) img.dispose();
+                }
+            }
+        });
+
+        treeViewer.getTree().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseDown(MouseEvent event) {
+                Point pt = new Point(event.x, event.y);
+                TreeItem item = treeViewer.getTree().getItem(pt);
+
+                if (item == null) {
+                    for (TreeItem i : treeViewer.getTree().getItems()) {
+                        Rectangle bounds = i.getBounds();
+                        if (event.y >= bounds.y && event.y <= (bounds.y + bounds.height)) {
+                            item = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (item == null) {
+                    return;
+                }
+
+                Object data = item.getData();
+
+                if (data instanceof Category) {
+                    Category category = (Category) data;
+                    String type = category.getElementType();
+                    String pluginIdAttr = category.getData("pluginId");
+                    String installedAttr = category.getData("installed");
+
+                    if (ELEMENT_TASK.equals(type) && installedAttr.equals("NOT") ) {
+                        GC gc = new GC(treeViewer.getTree());
+                        int textWidth = gc.textExtent(category.getName()).x;
+                        gc.dispose();
+
+                        Rectangle textBounds = item.getTextBounds(0);
+                        
+                        int iconStartX = textBounds.x + textWidth + 12;
+                        int iconEndX = iconStartX + 22; 
+
+                        if (event.x >= iconStartX && event.x <= iconEndX) {
+                            Display.getDefault().asyncExec(() -> {
+                            	System.out.println("Click: "+pluginIdAttr);
+                                TasksPluginDialog responseDialog = new TasksPluginDialog(Display.getCurrent().getActiveShell());
+                                responseDialog.setPluginId(pluginIdAttr);
+                                responseDialog.open();
+                            });
+                        }
+                    }
+                }
             }
         });
         treeViewer.setInput(categories);
@@ -313,9 +377,11 @@ public class StatisticsViewGlobal {
                     String classpathrelative = classpath.substring(projectPath.length());
                     openClassInEditor(getCurrentProject().getName(), classpathrelative);
                 }else {
-                	System.out.println("NO Class selected: " + category.getName());
+                    System.out.println("NO Class selected: " + category.getName());
                 }
             }
+        });
+        treeViewer.getTree().addListener(SWT.EraseItem, event -> {
         });
         table = new Table(composite, SWT.BORDER | SWT.FULL_SELECTION);
         table.setHeaderVisible(true);
@@ -332,9 +398,9 @@ public class StatisticsViewGlobal {
             column.setWidth(150); 
         }
         
-        for (Task itemTask : tasks) {
-        	if(listTaskCounter.get(itemTask.getName()) > 0) {
-        		TableItem item = new TableItem(table, SWT.NONE);
+        /*for (Task itemTask : tasks) {
+            if(listTaskCounter.get(itemTask.getName()) > 0) {
+                TableItem item = new TableItem(table, SWT.NONE);
                 int coverage = (totalMethods == 0) ? 0 : Math.round((listTaskCounter.get(itemTask.getName()) * 100f) / totalMethods);
                 String percent = (coverage == 0)? "<1%": coverage + "%";
                 item.setText(new String[] { itemTask.getName(), percent });
@@ -345,7 +411,27 @@ public class StatisticsViewGlobal {
                 progressBar.setSelection(coverage);
                 editor.grabHorizontal = true;
                 editor.setEditor(progressBar, item, 2);
-        	}
+            }
+        }*/
+        Map<String, Integer> taskCounts = getCovertureByTasks();
+
+        for (Map.Entry<String, Integer> entry : taskCounts.entrySet()) {
+            String taskName = entry.getKey();
+            int taskTotal = entry.getValue();
+
+            if (taskTotal > 0) {
+                TableItem item = new TableItem(table, SWT.NONE);
+                int coverage = (totalMethods == 0) ? 0 : Math.round((taskTotal * 100f) / totalMethods);
+                String percent = (coverage == 0) ? "<1%" : coverage + "%";
+                item.setText(new String[] { taskName, percent });
+                
+                TableEditor editor = new TableEditor(table);
+                ProgressBar progressBar = new ProgressBar(table, SWT.NONE);
+                progressBar.setMaximum(100);
+                progressBar.setSelection(coverage);
+                editor.grabHorizontal = true;
+                editor.setEditor(progressBar, item, 2);
+            }
         }
         
         table.getColumn(1).pack();
@@ -365,327 +451,355 @@ public class StatisticsViewGlobal {
                 }
             }
         });
-        /*Combo combo2 = new Combo(composite, SWT.DROP_DOWN | SWT.READ_ONLY);
-        String[] items = {
-            "the most used agent",
-            "the most accepted agent",
-            "the agent with the best preservation rate",
-            "the best agent that generates code requiring no modification",
-            "the best agent for optimization tasks",
-            "the best agent for documentation tasks",
-            "the best agent is best for",
-            "the most useful agent for a user"
-        };
-        combo2.setItems(items);
-        combo2.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        combo2.select(0);
-        Label label = new Label(composite, SWT.NONE);
-        label.setText("Agent: ");
-        label.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));*/
     }
 
     private List<Category> getCategoriesByTasks() {
-    	requestedTasks = 0;
-    	acceptedTasks = 0;
-    	rejectedTasks = 0;
+        requestedTasks = 0;
+        acceptedTasks = 0;
+        rejectedTasks = 0;
         List<Category> categories = new ArrayList<>();
         String name = getCurrentProject().getName();
-        List<Interaction> interactions = LogData.getIteractionsJSON(getCurrentProject());
+        List<Interaction> interactions = LogData.getInteractionsJSON(getCurrentProject());
         for (Interaction interaction : interactions) {
-        	if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
-        		
-        		requestedTasks++;
-        		if(interaction.getResult().isUsed()){
-        			acceptedTasks++;
-        		}else {
-        			rejectedTasks++;
-        		}
-        		
-        		Integer count = listTaskCounter.get(interaction.getTaskName());
-                if(count!=null) {
-                	count++;
-                	listTaskCounter.put(interaction.getTaskName(), count);
+            if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
+                
+                requestedTasks++;
+                if(interaction.getResult().isUsed()){
+                    acceptedTasks++;
+                }else {
+                    rejectedTasks++;
                 }
                 
-        		Category existingCategory = null;
-                for (Category category : categories) {
-                	if(category.getName() != null){
-	                    if (category.getName().equals(interaction.getTaskName())) {
-	                        existingCategory = category;
-	                        break;
-	                    }
-                	}else {
-                		//System.out.println("###@CategoryByTask: name-> (NULL):");
-                	}
+                Integer count = listTaskCounter.get(interaction.getTaskName());
+                if(count!=null) {
+                    count++;
+                    listTaskCounter.put(interaction.getTaskName(), count);
                 }
-                String targetParameter = interaction.getTargetParameterType();
-            	Category categoryClass = new Category (Util.getClassName(interaction.getContext().getResource().getFileName()));
-                categoryClass.setElementType(ELEMENT_CLASS);
-            	if (existingCategory != null) {
-            		existingCategory.setElementType(ELEMENT_TASK);
-            		Category categoryMethod = null;
-                	if(targetParameter!=null) {
-                		if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
-                			categoryMethod = new Category (interaction.getTargetParameterName());
-                			categoryMethod.setElementType(ELEMENT_METHOD);
-                        }else {
-                        	categoryMethod = new Category ("*");
-                        }
-                	}else {
-                		categoryMethod = new Category ("**");
-            			
-                	}
-                	categoryMethod.addSubItem(Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp()));
-                	categoryMethod.addSubItem("User: "+interaction.getGitUser()+"<"+interaction.getGitEmail()+">");
-                	categoryMethod.addSubItem("Agent: " +interaction.getResult().getAgent().getTechnology());
-        			categoryClass.addSubItem(categoryMethod);
-                	existingCategory.addSubItem(categoryClass);
-                } else {
-                    Category newCategory = new Category(interaction.getTaskName());
-                    newCategory.setElementType(ELEMENT_TASK);
-                    Category categoryMethod = null;
-                    if(interaction.getTargetParameterType() != null) {
-                    	if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
-                    		categoryMethod = new Category (interaction.getTargetParameterName()+"()");
-                        	categoryMethod.setElementType(ELEMENT_METHOD);
-                        	
-                        }else {
-                        	categoryMethod = new Category ("***");
+                
+                Category existingCategory = null;
+                for (Category category : categories) {
+                    if(category.getName() != null){
+                        if (category.getName().equals(interaction.getTaskName())) {
+                            existingCategory = category;
+                            break;
                         }
                     }else {
-                    	categoryMethod = new Category ("****");
+                        //System.out.println("###@CategoryByTask: name-> (NULL):");
+                    }
+                }
+                String targetParameter = interaction.getTargetParameterType();
+                Category categoryClass = new Category (Util.getClassName(interaction.getContext().getResource().getFileName()));
+                categoryClass.setElementType(ELEMENT_CLASS);
+                if (existingCategory != null) {
+                    existingCategory.setElementType(ELEMENT_TASK);
+                    Category categoryMethod = null;
+                    if(targetParameter!=null) {
+                        if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
+                            categoryMethod = new Category (interaction.getTargetParameterName());
+                            categoryMethod.setElementType(ELEMENT_METHOD);
+                        }else {
+                            categoryMethod = new Category ("*");
+                        }
+                    }else {
+                        categoryMethod = new Category ("**");
+                        
                     }
                     categoryMethod.addSubItem(Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp()));
                     categoryMethod.addSubItem("User: "+interaction.getGitUser()+"<"+interaction.getGitEmail()+">");
                     categoryMethod.addSubItem("Agent: " +interaction.getResult().getAgent().getTechnology());
-        			categoryClass.addSubItem(categoryMethod);
-        			newCategory.addSubItem(categoryClass);
+                    categoryClass.addSubItem(categoryMethod);
+                    existingCategory.addSubItem(categoryClass);
+                } else {
+                    Category newCategory = new Category(interaction.getTaskName());
+                    newCategory.setElementType(ELEMENT_TASK);
+                    String pluginId = TasksManager.findPluginId(interaction.getTaskCode());
+                    if(pluginId == null){
+                    	newCategory.setData("installed", "NOT");
+                    }else {
+                    	newCategory.setData("installed", "YES");
+                    }
+                    newCategory.setData("pluginId", interaction.getTaskPluginId());
+                    Category categoryMethod = null;
+                    if(interaction.getTargetParameterType() != null) {
+                        if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
+                            categoryMethod = new Category (interaction.getTargetParameterName()+"()");
+                            categoryMethod.setElementType(ELEMENT_METHOD);
+                            
+                        }else {
+                            categoryMethod = new Category ("***");
+                        }
+                    }else {
+                        categoryMethod = new Category ("****");
+                    }
+                    categoryMethod.addSubItem(Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp()));
+                    categoryMethod.addSubItem("User: "+interaction.getGitUser()+"<"+interaction.getGitEmail()+">");
+                    categoryMethod.addSubItem("Agent: " +interaction.getResult().getAgent().getTechnology());
+                    categoryClass.addSubItem(categoryMethod);
+                    newCategory.addSubItem(categoryClass);
                     categories.add(newCategory);
                 }
-        	}
-		}
+            }
+        }
         return categories;
+    }
+    
+    private Map<String, Integer> getCovertureByTasks() {
+        requestedTasks = 0;
+        acceptedTasks = 0;
+        rejectedTasks = 0;
+        
+        Map<String, Integer> taskCounts = new HashMap<>();
+        List<Interaction> interactions = LogData.getInteractionsJSON(getCurrentProject());
+        
+        for (Interaction interaction : interactions) {
+            if (interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
+                
+                requestedTasks++;
+                if (interaction.getResult().isUsed()) {
+                    acceptedTasks++;
+                } else {
+                    rejectedTasks++;
+                }
+                
+                Integer count = listTaskCounter.get(interaction.getTaskName());
+                if (count != null) {
+                    count++;
+                    listTaskCounter.put(interaction.getTaskName(), count);
+                }
+                
+                String taskName = interaction.getTaskName();
+                taskCounts.put(taskName, taskCounts.getOrDefault(taskName, 0) + 1);
+            }
+        }
+        taskCounts.forEach((name, total) -> System.out.println("Task: " + name + " | Total: " + total));
+        return taskCounts;
     }
 
     private List<Category> getCategoriesByAgents() {
-    	requestedTasks = 0;
-    	acceptedTasks = 0;
-    	rejectedTasks = 0;
+        requestedTasks = 0;
+        acceptedTasks = 0;
+        rejectedTasks = 0;
         List<Category> agentCategories = new ArrayList<>();
         String name = getCurrentProject().getName();
         System.out.println("###@CARET STATISTICS NEW Project:"+name);
-        List<Interaction> interactions = LogData.getIteractionsJSON(getCurrentProject());
+        List<Interaction> interactions = LogData.getInteractionsJSON(getCurrentProject());
         for (Interaction interaction : interactions) {
-        	if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
-        		requestedTasks++;
-        		if(interaction.getResult().isUsed()){
-        			acceptedTasks++;
-        		}else {
-        			rejectedTasks++;
-        		}
-        		
-        		Integer count = listTaskCounter.get(interaction.getTaskName());
-                if(count!=null) {
-                	count++;
-                	listTaskCounter.put(interaction.getTaskName(), count);
+            if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
+                requestedTasks++;
+                if(interaction.getResult().isUsed()){
+                    acceptedTasks++;
+                }else {
+                    rejectedTasks++;
                 }
                 
-        		Category existingAgentCategory = null;
+                Integer count = listTaskCounter.get(interaction.getTaskName());
+                if(count!=null) {
+                    count++;
+                    listTaskCounter.put(interaction.getTaskName(), count);
+                }
+                
+                Category existingAgentCategory = null;
                 for (Category agentCategory : agentCategories) {
-                	if(agentCategory.getName() != null){
-	                    if (agentCategory.getName().equals(interaction.getResult().getAgent().getTechnology())) {
-	                        existingAgentCategory = agentCategory;
-	                        break;
-	                    }
-                	}else {
-                		//System.out.println("###@CategoryByTask: name-> (NULL):");
-                	}
+                    if(agentCategory.getName() != null){
+                        if (agentCategory.getName().equals(interaction.getResult().getAgent().getTechnology())) {
+                            existingAgentCategory = agentCategory;
+                            break;
+                        }
+                    }else {
+                        //System.out.println("###@CategoryByTask: name-> (NULL):");
+                    }
                 }
                 String targetParameter = interaction.getTargetParameterType();
-            	Category categoryClass = new Category (Util.getClassName(interaction.getContext().getResource().getFileName()));
+                Category categoryClass = new Category (Util.getClassName(interaction.getContext().getResource().getFileName()));
                 categoryClass.setElementType(ELEMENT_CLASS);
-            	if (existingAgentCategory != null) {
-            		existingAgentCategory.setElementType(ELEMENT_TASK);
-            		Category categoryMethod = null;
-                	if(targetParameter!=null) {
-                		if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
-                			categoryMethod = new Category (interaction.getTargetParameterName());
-                			categoryMethod.setElementType(ELEMENT_METHOD);
+                if (existingAgentCategory != null) {
+                    existingAgentCategory.setElementType(ELEMENT_TASK);
+                    Category categoryMethod = null;
+                    if(targetParameter!=null) {
+                        if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
+                            categoryMethod = new Category (interaction.getTargetParameterName());
+                            categoryMethod.setElementType(ELEMENT_METHOD);
                         }else {
-                        	categoryMethod = new Category ("*");
+                            categoryMethod = new Category ("*");
                         }
-                	}else {
-                		categoryMethod = new Category ("**");
-            			
-                	}
-                	categoryMethod.addSubItem(Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp()));
-                	categoryMethod.addSubItem("User: "+interaction.getGitUser()+"<"+interaction.getGitEmail()+">");
-                	categoryMethod.addSubItem("Task: " +interaction.getTaskName());
-        			categoryClass.addSubItem(categoryMethod);
-                	existingAgentCategory.addSubItem(categoryClass);
-                	/*if (currentAgentCategory.getName().equals(interaction.getResult().getAgent().getTechnology())) {
-                		currentAgentCategory.addSubItem(existingTaskCategory);
+                    }else {
+                        categoryMethod = new Category ("**");
+                        
+                    }
+                    categoryMethod.addSubItem(Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp()));
+                    categoryMethod.addSubItem("User: "+interaction.getGitUser()+"<"+interaction.getGitEmail()+">");
+                    categoryMethod.addSubItem("Task: " +interaction.getTaskName());
+                    categoryClass.addSubItem(categoryMethod);
+                    existingAgentCategory.addSubItem(categoryClass);
+                    /*if (currentAgentCategory.getName().equals(interaction.getResult().getAgent().getTechnology())) {
+                        currentAgentCategory.addSubItem(existingTaskCategory);
                     }*/
                 } else {
                     Category newAgentCategory = new Category(interaction.getResult().getAgent().getTechnology());
                     newAgentCategory.setElementType(ELEMENT_TASK);
                     Category categoryMethod = null;
                     if(interaction.getTargetParameterType() != null) {
-                    	if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
-                    		categoryMethod = new Category (interaction.getTargetParameterName()+"()");
-                        	categoryMethod.setElementType(ELEMENT_METHOD);
-                        	
+                        if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
+                            categoryMethod = new Category (interaction.getTargetParameterName()+"()");
+                            categoryMethod.setElementType(ELEMENT_METHOD);
+                            
                         }else {
-                        	categoryMethod = new Category ("***");
+                            categoryMethod = new Category ("***");
                         }
                     }else {
-                    	categoryMethod = new Category ("****");
+                        categoryMethod = new Category ("****");
                     }
                     categoryMethod.addSubItem(Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp()));
                     categoryMethod.addSubItem("User: "+interaction.getGitUser()+"<"+interaction.getGitEmail()+">");
                     categoryMethod.addSubItem("Task: " +interaction.getTaskName());
-        			categoryClass.addSubItem(categoryMethod);
-        			newAgentCategory.addSubItem(categoryClass);
-        			/*if (currentAgentCategory.getName().equals(interaction.getResult().getAgent().getTechnology())) {
-        				currentAgentCategory.addSubItem(newTaskCategory);
+                    categoryClass.addSubItem(categoryMethod);
+                    newAgentCategory.addSubItem(categoryClass);
+                    /*if (currentAgentCategory.getName().equals(interaction.getResult().getAgent().getTechnology())) {
+                        currentAgentCategory.addSubItem(newTaskCategory);
                     }*/
                     agentCategories.add(newAgentCategory);
                 }
-        	}
-		}
+            }
+        }
         return agentCategories;
     }
     
     private List<Category> getCategoriesByUser() {
-    	requestedTasks = 0;
-    	acceptedTasks = 0;
-    	rejectedTasks = 0;
+        requestedTasks = 0;
+        acceptedTasks = 0;
+        rejectedTasks = 0;
         List<Category> taskCategories = new ArrayList<>();
         List<Category> userCategories = new ArrayList<>();
         String name = getCurrentProject().getName();
-        List<Interaction> interactions = LogData.getIteractionsJSON(getCurrentProject());
+        List<Interaction> interactions = LogData.getInteractionsJSON(getCurrentProject());
         for (Interaction interaction : interactions) {
-        	if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
-        		
-        		requestedTasks++;
-        		if(interaction.getResult().isUsed()){
-        			acceptedTasks++;
-        		}else {
-        			rejectedTasks++;
-        		}
-        		
-        		Integer count = listTaskCounter.get(interaction.getTaskName());
+            if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
+                
+                requestedTasks++;
+                if(interaction.getResult().isUsed()){
+                    acceptedTasks++;
+                }else {
+                    rejectedTasks++;
+                }
+                
+                Integer count = listTaskCounter.get(interaction.getTaskName());
                 if(count!=null) {
-                	count++;
-                	listTaskCounter.put(interaction.getTaskName(), count);
+                    count++;
+                    listTaskCounter.put(interaction.getTaskName(), count);
                 }
                 
                 Category existingUserCategory = null;
                 for (Category userCategory : userCategories) {
-                	if(userCategory.getName() != null){
-	                    if (userCategory.getName().equals(interaction.getGitUser())) {
-	                        existingUserCategory = userCategory;
-	                        break;
-	                    }
-                	}else {
-                		//System.out.println("###@CategoryByUser: name-> (NULL):");
-                	}
+                    if(userCategory.getName() != null){
+                        if (userCategory.getName().equals(interaction.getGitUser())) {
+                            existingUserCategory = userCategory;
+                            break;
+                        }
+                    }else {
+                        //System.out.println("###@CategoryByUser: name-> (NULL):");
+                    }
                 }
                 
-        		Category existingTaskCategory = null;
+                Category existingTaskCategory = null;
                 for (Category categoryTask : taskCategories) {
-                	if(categoryTask.getName() != null){
-	                    if (categoryTask.getName().equals(interaction.getTaskName())) {
-	                        existingTaskCategory = categoryTask;
-	                        break;
-	                    }
-                	}else {
-                		//System.out.println("###@CategoryByUser: name-> (NULL):");
-                	}
+                    if(categoryTask.getName() != null){
+                        if (categoryTask.getName().equals(interaction.getTaskName())) {
+                            existingTaskCategory = categoryTask;
+                            break;
+                        }
+                    }else {
+                        //System.out.println("###@CategoryByUser: name-> (NULL):");
+                    }
                 }
                 
                 String targetParameter = interaction.getTargetParameterType();
-            	Category categoryClass = new Category (Util.getClassName(interaction.getContext().getResource().getFileName()));
+                Category categoryClass = new Category (Util.getClassName(interaction.getContext().getResource().getFileName()));
                 categoryClass.setElementType(ELEMENT_CLASS);
                 
                 Category _categoryTask;
-            	if (existingTaskCategory != null) {
-            		existingTaskCategory.setElementType(ELEMENT_TASK);
-            		Category categoryMethod = null;
-                	if(targetParameter!=null) {
-                		if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
-                			categoryMethod = new Category (interaction.getTargetParameterName());
-                			categoryMethod.setElementType(ELEMENT_METHOD);
-                        }else {
-                        	categoryMethod = new Category ("*");
-                        }
-                	}else {
-                		categoryMethod = new Category ("**");
-            			
-                	}
-                	categoryMethod.addSubItem(Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp()));
-                	categoryMethod.addSubItem("Agent: " +interaction.getResult().getAgent().getTechnology());
-        			categoryClass.addSubItem(categoryMethod);
-                	existingTaskCategory.addSubItem(categoryClass);
-                	_categoryTask = existingTaskCategory;
-                } else {
-                    Category newTaskCategory = new Category(interaction.getTaskName());
-                    newTaskCategory.setElementType(ELEMENT_TASK);
+                if (existingTaskCategory != null) {
+                    existingTaskCategory.setElementType(ELEMENT_TASK);
                     Category categoryMethod = null;
-                    if(interaction.getTargetParameterType() != null) {
-                    	if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
-                    		categoryMethod = new Category (interaction.getTargetParameterName()+"()");
-                        	categoryMethod.setElementType(ELEMENT_METHOD);
-                        	
+                    if(targetParameter!=null) {
+                        if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
+                            categoryMethod = new Category (interaction.getTargetParameterName());
+                            categoryMethod.setElementType(ELEMENT_METHOD);
                         }else {
-                        	categoryMethod = new Category ("***");
+                            categoryMethod = new Category ("*");
                         }
                     }else {
-                    	categoryMethod = new Category ("****");
+                        categoryMethod = new Category ("**");
                     }
                     categoryMethod.addSubItem(Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp()));
                     categoryMethod.addSubItem("Agent: " +interaction.getResult().getAgent().getTechnology());
-        			categoryClass.addSubItem(categoryMethod);
-        			newTaskCategory.addSubItem(categoryClass);
-        			_categoryTask = newTaskCategory;
+                    categoryClass.addSubItem(categoryMethod);
+                    existingTaskCategory.addSubItem(categoryClass);
+                    _categoryTask = existingTaskCategory;
+                } else {
+                    Category newTaskCategory = new Category(interaction.getTaskName());
+                    newTaskCategory.setElementType(ELEMENT_TASK);
+                    String pluginId = TasksManager.findPluginId(interaction.getTaskCode());
+                    if(pluginId == null){
+                    	newTaskCategory.setData("installed", "NOT");
+                    }else {
+                    	newTaskCategory.setData("installed", "YES");
+                    }
+                    newTaskCategory.setData("pluginId", interaction.getTaskPluginId());
+                    System.out.println("###pluginId: "+pluginId);
+                    Category categoryMethod = null;
+                    if(interaction.getTargetParameterType() != null) {
+                        if(interaction.getTargetParameterType().equals(JavaConcept.METHOD.name())) {
+                            categoryMethod = new Category (interaction.getTargetParameterName()+"()");
+                            categoryMethod.setElementType(ELEMENT_METHOD);
+                        }else {
+                            categoryMethod = new Category ("***");
+                        }
+                    }else {
+                        categoryMethod = new Category ("****");
+                    }
+                    categoryMethod.addSubItem(Util.getDateFormat("yyyy-MM-dd HH:mm:ss", interaction.getTimestamp()));
+                    categoryMethod.addSubItem("Agent: " +interaction.getResult().getAgent().getTechnology());
+                    categoryClass.addSubItem(categoryMethod);
+                    newTaskCategory.addSubItem(categoryClass);
+                    _categoryTask = newTaskCategory;
                     taskCategories.add(newTaskCategory);
                 }
-            	
-            	if (existingUserCategory != null) {
-            		existingUserCategory.setElementType(ELEMENT_USER);
-            		if (existingTaskCategory == null) {
-            			existingUserCategory.addSubItem(_categoryTask);
-            		}
-            	}else {
-            		Category newUserCategory = new Category(interaction.getGitUser());
+                
+                if (existingUserCategory != null) {
+                    existingUserCategory.setElementType(ELEMENT_USER);
+                    if (existingTaskCategory == null) {
+                        existingUserCategory.addSubItem(_categoryTask);
+                    }
+                }else {
+                    Category newUserCategory = new Category(interaction.getGitUser());
                     newUserCategory.setElementType(ELEMENT_USER);
                     newUserCategory.addSubItem(_categoryTask);
                     userCategories.add(newUserCategory);
-            			//;
-            	}
-        	}
-		}
+                        //;
+                }
+            }
+        }
         return userCategories;
     }
 
     
     public void updateStatistics() {
-    	System.out.println("###CARET STATISTICS UPDATE");
-    	if(selectedIndex == 0) {
-    		treeViewer.setInput(getCategoriesByTasks());
-    	}
-    	if(selectedIndex == 1) {
-    		treeViewer.setInput(getCategoriesByAgents());
-    	}
-    	if(selectedIndex == 4) {
-    		treeViewer.setInput(getCategoriesByUser());
-    	}
-    	
-    	/*label.setText("Tasks -> Requested ("+requestedTasks+")\n"
-        		+ "Accepted("+acceptedTasks+")\n"
-        		+ "Rejected("+rejectedTasks+")");*/
-    	updateStyledTextTasks();
-    	updateStyledTextTaskRates();
+        System.out.println("###CARET STATISTICS UPDATE");
+        if(selectedIndex == 0) {
+            treeViewer.setInput(getCategoriesByTasks());
+        }
+        if(selectedIndex == 1) {
+            treeViewer.setInput(getCategoriesByAgents());
+        }
+        if(selectedIndex == 4) {
+            treeViewer.setInput(getCategoriesByUser());
+        }
+        
+        /*label.setText("Tasks -> Requested ("+requestedTasks+")\n"
+                + "Accepted("+acceptedTasks+")\n"
+                + "Rejected("+rejectedTasks+")");*/
+        updateStyledTextTasks();
+        updateStyledTextTaskRates();
     }
     
     public void updateStatistics(List<Category> newCategories) {
@@ -695,7 +809,7 @@ public class StatisticsViewGlobal {
     }
     
     public List<Category> getCategoriesbyProjectStructure() {
-    	Pattern annotationPattern = Pattern.compile("@Generated\\((.*?)\\)");
+        Pattern annotationPattern = Pattern.compile("@Generated\\((.*?)\\)");
         List<Category> categories = new ArrayList<>();
         try {
             IProject project = getCurrentProject();
@@ -705,10 +819,10 @@ public class StatisticsViewGlobal {
 
                 for (IPackageFragment myPackage : packages) {
                     if (myPackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
-                    	String packageName = myPackage.getElementName();
-                    	if(packageName.equals("")) {
-                    		packageName ="[Default]";
-                    	}
+                        String packageName = myPackage.getElementName();
+                        if(packageName.equals("")) {
+                            packageName ="[Default]";
+                        }
                         Category packageCategory = new Category(packageName);
                         packageCategory.setElementType(ELEMENT_PACKAGE);
                         
@@ -718,10 +832,10 @@ public class StatisticsViewGlobal {
                             classCategory.setElementType(ELEMENT_CLASS);
                             boolean annotationGenerated;
                             for (IType type : unit.getTypes()) {
-                            	annotationGenerated = false;
+                                annotationGenerated = false;
                                 for (IMethod method : type.getMethods()) {
-                                	Category methodCategory = new Category(method.getElementName()+ (method.getNumberOfParameters()>0 ? "(...)":"()"));
-                                	methodCategory.setElementType(ELEMENT_METHOD);
+                                    Category methodCategory = new Category(method.getElementName()+ (method.getNumberOfParameters()>0 ? "(...)":"()"));
+                                    methodCategory.setElementType(ELEMENT_METHOD);
                                     String source = unit.getSource();
                                     String methodSignature = method.getSource();
                                     int start = method.getSourceRange().getOffset();
@@ -733,6 +847,13 @@ public class StatisticsViewGlobal {
                                         
                                         Map<String, String> parsedData = AnnotationParser.parseAnnotation(annotationContent);
                                         Category taskCategory = new Category("Task: " + parsedData.get("task"));
+                                        String pluginId = TasksManager.findPluginId(parsedData.get("task"));
+                                        if(pluginId == null){
+                                        	taskCategory.setData("installed", "NOT");
+                                        }else {
+                                        	taskCategory.setData("installed", "YES");
+                                        }
+                                        taskCategory.setData("pluginId", pluginId);
                                         taskCategory.setElementType(ELEMENT_TASK);
                                         taskCategory.addSubItem("Agent: " + parsedData.get("agent"));
                                         taskCategory.addSubItem("Date: " + parsedData.get("timestamp"));
@@ -743,14 +864,14 @@ public class StatisticsViewGlobal {
                                     }
                                 }
                                 if(annotationGenerated) {
-                                	packageCategory.addSubItem(classCategory);
-                                	classAnnotationGenerated = true;
+                                    packageCategory.addSubItem(classCategory);
+                                    classAnnotationGenerated = true;
                                 }
                             }
                            
                         }
                         if(classAnnotationGenerated) {
-                        	categories.add(packageCategory);
+                            categories.add(packageCategory);
                         }
                     }
                 }
@@ -807,18 +928,20 @@ public class StatisticsViewGlobal {
         private List<Object> subItems;
         private String elementType;
         private Category parent;
+        private Map<String, String> data;
 
         public String getElementType() {
-			return elementType;
-		}
+            return elementType;
+        }
 
-		public void setElementType(String elementType) {
-			this.elementType = elementType;
-		}
+        public void setElementType(String elementType) {
+            this.elementType = elementType;
+        }
 
-		public Category(String name) {
+        public Category(String name) {
             this.name = name;
             this.subItems = new ArrayList<>();
+            this.data = new HashMap<>();
         }
 
         public void addSubItem(Object subItem) {
@@ -826,7 +949,7 @@ public class StatisticsViewGlobal {
         }
         
         public void addSubItem(Category subItem) {
-        	subItem.setParent(this);
+            subItem.setParent(this);
             subItems.add(subItem);
         }
 
@@ -846,122 +969,146 @@ public class StatisticsViewGlobal {
             return parent;
         }
 
+        public void setData(String key, String value) {
+            data.put(key, value);
+        }
+
+        public String getData(String key) {
+            return data.get(key);
+        }
+        
         @Override
         public String toString() {
             return name;
         }
     }
     
-	/*public List<Interaction> getIteractionsJSON(IProject project) {
-		String projectPath = project.getLocation().toString();
-		System.out.println("##getIteractionsJSON: " + projectPath+"/.log");
-		List<Interaction> totalInteractions = new ArrayList<Interaction> ();
-		List <String> listInteractionsJSON = Util.readFilesFromDirectory(projectPath+"/.log", ".json");
-		Gson gson = new Gson();
-		for (String interactionsJSON : listInteractionsJSON) {
-			List<Interaction> interactions = gson.fromJson(interactionsJSON, new TypeToken<List<Interaction>>() {}.getType());
-	        totalInteractions.addAll(interactions);
-		}
-		return totalInteractions;
-	}*/
-	
-	public IProject getCurrentProject() {
-		IProject project = null;
-			//IEditorPart  editorPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-			IResource  resource= Resource.getSelectedResource();
-			if(resource != null){
-			    //IResource  resource= (IResource)editorPart.getEditorInput().getAdapter(IResource.class);
-			    project = resource.getProject();
-			    if(project != null) {
-			    	return project;
-			    }
-			}else {
-		        IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-		        IProject lastProject = null;
-		        long modificationStamp = 0;
-		        for (IProject proj : projects) {
-		        	if(lastProject == null) {
-		        		lastProject = proj;
-		        	}
-		        	if(proj.getModificationStamp()> modificationStamp) {
-		        		lastProject = proj;
-		        		modificationStamp = proj.getModificationStamp();
-		        	}
-		        }
-		        if(lastProject != null) {
-		        	return lastProject;
-		        }
-			}
-		return project;
-	}
-	
-	private void updateStyledTextTasks() {
-		
-	    if (styledTextTasks == null || styledTextTasks.isDisposed()) {
-	        return;
-	    }
-	    String requested = "Requested (" + requestedTasks + ")";
-	    String accepted = "Accepted (" + acceptedTasks + ")";
-	    String rejected = "Rejected (" + rejectedTasks + ")";
-	    String text = "Tasks: "+ requested +" | "
-	            + accepted +" | "
-	            + rejected;
+    /*public List<Interaction> getIteractionsJSON(IProject project) {
+        String projectPath = project.getLocation().toString();
+        System.out.println("##getIteractionsJSON: " + projectPath+"/.log");
+        List<Interaction> totalInteractions = new ArrayList<Interaction> ();
+        List <String> listInteractionsJSON = Util.readFilesFromDirectory(projectPath+"/.log", ".json");
+        Gson gson = new Gson();
+        for (String interactionsJSON : listInteractionsJSON) {
+            List<Interaction> interactions = gson.fromJson(interactionsJSON, new TypeToken<List<Interaction>>() {}.getType());
+            totalInteractions.addAll(interactions);
+        }
+        return totalInteractions;
+    }*/
+    
+    public IProject getCurrentProject() {
+        IProject project = null;
+        //IEditorPart  editorPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+        IResource  resource= Resource.getSelectedResource();
+        if(resource != null){
+            //IResource  resource= (IResource)editorPart.getEditorInput().getAdapter(IResource.class);
+            project = resource.getProject();
+            if(project != null) {
+                return project;
+            }
+        }
+        if(project == null) {
+            if (project == null) {
+                IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+                if (window != null && window.getActivePage() != null) {
+                    IEditorPart editorPart = window.getActivePage().getActiveEditor();
+                    if (editorPart != null) {
+                        IResource editorResource = editorPart.getEditorInput().getAdapter(IResource.class);
+                        if (editorResource != null) {
+                            project = editorResource.getProject();
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(project == null){
+            IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+            IProject lastProject = null;
+            long modificationStamp = 0;
+            for (IProject proj : projects) {
+                if(lastProject == null) {
+                    lastProject = proj;
+                }
+                if(proj.getModificationStamp()> modificationStamp) {
+                    lastProject = proj;
+                    modificationStamp = proj.getModificationStamp();
+                }
+            }
+            if(lastProject != null) {
+                return lastProject;
+            }
+        }
+        return project;
+    }
+    
+    private void updateStyledTextTasks() {
+        
+        if (styledTextTasks == null || styledTextTasks.isDisposed()) {
+            return;
+        }
+        String requested = "Requested (" + requestedTasks + ")";
+        String accepted = "Accepted (" + acceptedTasks + ")";
+        String rejected = "Rejected (" + rejectedTasks + ")";
+        String text = "Tasks: "+ requested +" | "
+                + accepted +" | "
+                + rejected;
 
-	    styledTextTasks.setText(text);
+        styledTextTasks.setText(text);
 
-	    // Define colors
-	    Display display = Display.getCurrent();
-	    Color gray = display.getSystemColor(SWT.COLOR_DARK_GRAY);
-	    Color blue = display.getSystemColor(SWT.COLOR_BLUE);
-	    Color green = display.getSystemColor(SWT.COLOR_DARK_GREEN);
-	    Color red = display.getSystemColor(SWT.COLOR_RED);
+        // Define colors
+        Display display = Display.getCurrent();
+        Color gray = display.getSystemColor(SWT.COLOR_DARK_GRAY);
+        Color blue = display.getSystemColor(SWT.COLOR_BLUE);
+        Color green = display.getSystemColor(SWT.COLOR_DARK_GREEN);
+        Color red = display.getSystemColor(SWT.COLOR_RED);
 
-	    // Apply styles
-	    StyleRange tasksStyle = new StyleRange(0, 6, gray, null, SWT.BOLD);
-	    StyleRange requestedStyle = new StyleRange(text.indexOf("Requested"), requested.length(), blue, null, SWT.NORMAL);
-	    StyleRange acceptedStyle = new StyleRange(text.indexOf("Accepted"), accepted.length(), green, null, SWT.NORMAL);
-	    StyleRange rejectedStyle = new StyleRange(text.indexOf("Rejected"), rejected.length(), red, null, SWT.NORMAL);
+        // Apply styles
+        StyleRange tasksStyle = new StyleRange(0, 6, gray, null, SWT.BOLD);
+        StyleRange requestedStyle = new StyleRange(text.indexOf("Requested"), requested.length(), blue, null, SWT.NORMAL);
+        StyleRange acceptedStyle = new StyleRange(text.indexOf("Accepted"), accepted.length(), green, null, SWT.NORMAL);
+        StyleRange rejectedStyle = new StyleRange(text.indexOf("Rejected"), rejected.length(), red, null, SWT.NORMAL);
 
-	    styledTextTasks.setStyleRanges(new StyleRange[]{tasksStyle, requestedStyle, acceptedStyle, rejectedStyle});
-	}
-	
-	private void updateStyledTextTaskRates() {
-		countGeneratedAnnotations();
-	    Log.d("***TASK RATES: "+requestedTasks+"-"+acceptedTasks+"-"+survivalTasks+"-"+preservationTasks);
+        styledTextTasks.setStyleRanges(new StyleRange[]{tasksStyle, requestedStyle, acceptedStyle, rejectedStyle});
+    }
+    
+    private void updateStyledTextTaskRates() {
+        countGeneratedAnnotations();
+        Log.d("***TASK RATES: "+requestedTasks+"-"+acceptedTasks+"-"+survivalTasks+"-"+preservationTasks);
 	    int acceptanceRate = (int) Math.round(((double) acceptedTasks / requestedTasks)*100);
 	    int survivalRate = (int) Math.round(((double) survivalTasks / requestedTasks)*100);
 	    int preservationRate = (int) Math.round(((double) preservationTasks / requestedTasks)*100);
-	    String acceptance = "Acceptance (" + Util.clampToPercentageRange(acceptanceRate) + "%)";
-	    String survival = "Survival (" + Util.clampToPercentageRange(survivalRate) + "%)";
-	    String preservation = "Preservation (" + Util.clampToPercentageRange(preservationRate) + "%)";
-	    
-	    if (styledTextTaskRates == null || styledTextTaskRates.isDisposed()) {
-	        return;
-	    }
+        String acceptance = "Acceptance (" + Util.clampToPercentageRange(acceptanceRate) + "%)";
+        String survival = "Survival (" + Util.clampToPercentageRange(survivalRate) + "%)";
+        String preservation = "Preservation (" + Util.clampToPercentageRange(preservationRate) + "%)";
+        
+        if (styledTextTaskRates == null || styledTextTaskRates.isDisposed()) {
+            return;
+        }
 
-	    String text = "Rates: " + acceptance + " | "
-	            + survival + " | "
-	            + preservation;
+        String text = "Rates: " + acceptance + " | "
+                + survival + " | "
+                + preservation;
 
-	    styledTextTaskRates.setText(text);
+        styledTextTaskRates.setText(text);
 
-	    // Define colors
-	    Display display = Display.getCurrent();
-	    Color gray = display.getSystemColor(SWT.COLOR_DARK_GRAY);
-	    Color blue = display.getSystemColor(SWT.COLOR_DARK_BLUE);
-	    Color green = display.getSystemColor(SWT.COLOR_DARK_GREEN);
-	    Color red = display.getSystemColor(SWT.COLOR_RED);
+        // Define colors
+        Display display = Display.getCurrent();
+        Color gray = display.getSystemColor(SWT.COLOR_DARK_GRAY);
+        Color blue = display.getSystemColor(SWT.COLOR_DARK_BLUE);
+        Color green = display.getSystemColor(SWT.COLOR_DARK_GREEN);
+        Color red = display.getSystemColor(SWT.COLOR_RED);
 
-	    // Apply styles
-	    StyleRange tasksStyle = new StyleRange(0, 6, gray, null, SWT.BOLD);
-	    StyleRange requestedStyle = new StyleRange(text.indexOf("Acceptance"), acceptance.length(), blue, null, SWT.NORMAL);
-	    StyleRange acceptedStyle = new StyleRange(text.indexOf("Survival"), survival.length(), blue, null, SWT.NORMAL);
-	    StyleRange rejectedStyle = new StyleRange(text.indexOf("Preservation"), preservation.length(), blue, null, SWT.NORMAL);
+        // Apply styles
+        StyleRange tasksStyle = new StyleRange(0, 6, gray, null, SWT.BOLD);
+        StyleRange requestedStyle = new StyleRange(text.indexOf("Acceptance"), acceptance.length(), blue, null, SWT.NORMAL);
+        StyleRange acceptedStyle = new StyleRange(text.indexOf("Survival"), survival.length(), blue, null, SWT.NORMAL);
+        StyleRange rejectedStyle = new StyleRange(text.indexOf("Preservation"), preservation.length(), blue, null, SWT.NORMAL);
 
-	    styledTextTaskRates.setStyleRanges(new StyleRange[]{tasksStyle, requestedStyle, acceptedStyle, rejectedStyle});
-	}
+        styledTextTaskRates.setStyleRanges(new StyleRange[]{tasksStyle, requestedStyle, acceptedStyle, rejectedStyle});
+    }
 
-	public void openClassInEditor(String projectName, String classFilePath) {
+    public void openClassInEditor(String projectName, String classFilePath) {
         try {
             IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
             if (project != null && project.isAccessible()) {
@@ -981,60 +1128,61 @@ public class StatisticsViewGlobal {
             System.out.println("### Error opening file in editor: " + e.getMessage());
         }
     }
-	
-	public void countGeneratedAnnotations() {
-		survivalTasks=0;
-		preservationTasks=0;
-	    Pattern annotationPattern = Pattern.compile("@Generated\\((.*?)\\)");
-	    try {
-	        IProject project = getCurrentProject();
-	        if (project != null && project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
-	            IJavaProject javaProject = JavaCore.create(project);
-	            IPackageFragment[] packages = javaProject.getPackageFragments();
-	            List<Interaction> interactions = LogData.getIteractionsJSON(getCurrentProject());
-	            for (IPackageFragment myPackage : packages) {
-	                if (myPackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
-	                    for (ICompilationUnit unit : myPackage.getCompilationUnits()) {
-	                        String source = unit.getSource();
-	                        for (IType type : unit.getTypes()) {
-	                            for (IMethod method : type.getMethods()) {
-	                                int start = method.getSourceRange().getOffset();
-	                                int length = method.getSourceRange().getLength();
-	                                String methodSource = source.substring(start, start + length);
-	                                
-	                                Matcher matcher = annotationPattern.matcher(methodSource);
-	                                if (matcher.find()) {
-	                                    survivalTasks++;
-	                                    String body = extractMethodBody(methodSource);
-	                                    String annotationContent = matcher.group(1); 
+    
+    public void countGeneratedAnnotations() {
+        survivalTasks=0;
+        preservationTasks=0;
+        Pattern annotationPattern = Pattern.compile("@Generated\\((.*?)\\)");
+        try {
+            IProject project = getCurrentProject();
+            if (project != null && project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
+                IJavaProject javaProject = JavaCore.create(project);
+                IPackageFragment[] packages = javaProject.getPackageFragments();
+                List<Interaction> interactions = LogData.getInteractionsJSON(getCurrentProject());
+                Log.d("-interacions.size:"+interactions.size());
+                for (IPackageFragment myPackage : packages) {
+                    if (myPackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
+                        for (ICompilationUnit unit : myPackage.getCompilationUnits()) {
+                            String source = unit.getSource();
+                            for (IType type : unit.getTypes()) {
+                                for (IMethod method : type.getMethods()) {
+                                    int start = method.getSourceRange().getOffset();
+                                    int length = method.getSourceRange().getLength();
+                                    String methodSource = source.substring(start, start + length);
+                                    
+                                    Matcher matcher = annotationPattern.matcher(methodSource);
+                                    if (matcher.find()) {
+                                        survivalTasks++;
+                                        String body = extractMethodBody(methodSource);
+                                        String annotationContent = matcher.group(1); 
                                         Map<String, String> parsedData = AnnotationParser.parseAnnotation(annotationContent);
                                         String id = parsedData.get("id");
                                         String hash = Hash.md5(body);
                                         //Log.d("-id:"+id);
-	                                     for (Interaction interaction : interactions) {
-	                                     	if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
-	                                     		if(String.valueOf(interaction.getTimestamp()).equals(id)) {
-	                                     			if(hash.equals(interaction.getHash())) {
-	                                     				preservationTasks++;
-	                                     			}
-	                                     			break;
-	                                     		}
-	                                     	}
-	                                     }
-	                                	//--
-	                                }
-	                            }
-	                        }
-	                    }
-	                }
-	            }
-	        }
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-	}
-	
-	public String extractMethodBody(String methodSource) {
+                                         for (Interaction interaction : interactions) {
+                                            if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
+                                                if(String.valueOf(interaction.getTimestamp()).equals(id)) {
+                                                    if(hash.equals(interaction.getHash())) {
+                                                        preservationTasks++;
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                         }
+                                        //--
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public String extractMethodBody(String methodSource) {
         // Create an ASTParser
         ASTParser parser = ASTParser.newParser(AST.JLS17); // Use appropriate JLS level
         parser.setKind(ASTParser.K_CLASS_BODY_DECLARATIONS); // We're parsing method(s)
@@ -1057,7 +1205,7 @@ public class StatisticsViewGlobal {
             return body != null ? body.toString() : null;
         }
 
-        return null; // Body not found or invalid input
+        return null; // Body not found or invalid input AC
     }
 
 }

@@ -22,9 +22,10 @@ public class PreferenceConstants {
 	public static final String P_CONTEXT_METHOD_PARAMETERS = "ContextMethodParametersPreference";
 	public static final String P_CONTEXT_METHOD_VARIABLES = "ContextMethodVariablesPreference";
 	public static final String P_CONTEXT_ATTRIBUTE = "ContextAtributePreference";
-	public static final String P_MONGO_USER = "MongoUser";
-	public static final String P_MONGO_PASSWORD = "MongoPassword";
-	public static final String P_MONGO_HOST = "MongoHost";
 	public static final String P_MONGO_DATABASE = "MongoDatabase";
-	public static final String P_MONGO_APPNAME = "MongoAppName";
+	public static final String P_MONGO_URI = "MongoConnectionURI";
+	public static final String P_TASKS_UPLOAD_URL = "TasksUploadURL";
+	public static final String P_TASKS_UPLOAD_TOKEN = "TasksUploadToken";
+	public static final String P_TASKS_P2_REPOSITORY_URL = "TasksP2RepositoryURL";
+	
 }

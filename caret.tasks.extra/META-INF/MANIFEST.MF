@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Lamb
+Bundle-Name: JavaExtra
 Bundle-SymbolicName: caret.tasks.extra;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: caret.tasks.extra.Activator

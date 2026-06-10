@@ -1,12 +1,12 @@
 package caret.data;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.bson.Document;
 
 import com.google.gson.Gson;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.MongoTimeoutException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -15,44 +15,32 @@ import java.util.concurrent.TimeUnit;
 
 public class MongoDB {
 
-    private String CONNECTION_STRING = "mongodb+srv://albertcorome_db_user:xJ6M1LG69U40CgYe@caret-cluster.wefhfh9.mongodb.net/?appName=caret-cluster";
-
     private String DB_NAME = "db_caret";
     private static final String COLLECTION = "interactions";
+    private String collection; 
     private MongoClient client;
     private MongoDatabase db;
-    private MongoCollection<Document> collection;
+    private MongoCollection<Document> mongoCollection;
     private Gson gson = new Gson();
     
-
-    private String user;
-    private String password;
-    private String host;
     private String database;
-    private String appName;
+    private String connectionURI;
 
-    public MongoDB() {
+	public MongoDB() {
+    	
     }
-
-    /*public void connect() {
-        System.out.println("Connecting to MongoDB...");
-        String connectionString = getConnectionString();
-        client = MongoClients.create(connectionString);
-        //client = MongoClients.create(CONNECTION_STRING);
-        db = client.getDatabase(DB_NAME);
-        collection = db.getCollection(COLLECTION);
-
-        System.out.println("Connected to database: " + DB_NAME);
-    }*/
+	
+	public MongoDB(String connectionURI, String database) {
+    	this.connectionURI = connectionURI;
+    	this.database = database;
+    }
     
-    
-
     public boolean connect() {
         System.out.println("Connecting to MongoDB...");
 
         try {
             MongoClientSettings settings = MongoClientSettings.builder()
-                    .applyConnectionString(new com.mongodb.ConnectionString(getConnectionString()))
+                    .applyConnectionString(new com.mongodb.ConnectionString(getConnectionURI()))
                     .applyToSocketSettings(builder ->
                             builder.connectTimeout(10, TimeUnit.SECONDS)
                                    .readTimeout(10, TimeUnit.SECONDS))
@@ -65,7 +53,7 @@ public class MongoDB {
 
             db.runCommand(new Document("ping", 1));
 
-            collection = db.getCollection(COLLECTION);
+            //mongoCollection = db.getCollection(this.collection);
 
             System.out.println("Connected to database: " + DB_NAME);
             return true;
@@ -85,24 +73,29 @@ public class MongoDB {
         return false;
     }
 
-    public void setupCollection() {
+    public void setupCollection(String collection) {
+    	this.collection = collection;
         ArrayList<String> names = db.listCollectionNames().into(new ArrayList<>());
 
-        if (!names.contains(COLLECTION)) {
-            db.createCollection(COLLECTION);
-            System.out.println("Collection created: " + COLLECTION);
+        if (!names.contains(collection)) {
+            db.createCollection(collection);
+            System.out.println("Collection created: " + collection);
         } else {
-            System.out.println("Collection already exists: " + COLLECTION);
+            System.out.println("Collection already exists: " + collection);
         }
 
-        collection = db.getCollection(COLLECTION);
+        mongoCollection = db.getCollection(collection);
     }
 
-    public void addDocument(Interaction interaction) {
+    public MongoCollection<Document> getMongoCollection() {
+		return mongoCollection;
+	}
+
+	public void addDocument(Interaction interaction) {
         String json = gson.toJson(interaction);
         Document doc = Document.parse(json);
 
-        collection.insertOne(doc);
+        mongoCollection.insertOne(doc);
 
         System.out.println("Document inserted successfully into " + DB_NAME + "." + COLLECTION);
     }
@@ -111,7 +104,7 @@ public class MongoDB {
 
         Document query = new Document("hash", hash);
 
-        Document result = collection.find(query).first();
+        Document result = mongoCollection.find(query).first();
 
         if (result != null) {
             System.out.println("Document found:");
@@ -125,7 +118,7 @@ public class MongoDB {
 
         Document query = new Document("timestamp", timestamp);
 
-        Document result = collection.find(query).first();
+        Document result = mongoCollection.find(query).first();
 
         if (result != null) {
             System.out.println("Document found:");
@@ -141,35 +134,6 @@ public class MongoDB {
         }
     }
     
-    public String getConnectionString() {
-    	String connectionString = "mongodb+srv://"+getUser()+":"+getPassword()+"@"+getHost()+"/?appName="+getAppName();
-    	return connectionString;
-    }
-    
-    public String getUser() {
-        return user;
-    }
-
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
-
     public String getDatabase() {
         return database;
     }
@@ -178,12 +142,53 @@ public class MongoDB {
         this.database = database;
     }
 
-    public String getAppName() {
-        return appName;
-    }
+    public String executeQueryClean(String jsonQuery) {
+	    if (mongoCollection == null) return "Error: No connection.";
+	    
+	    List<Document> results = new ArrayList<>();
+	    StringBuilder response = new StringBuilder();
+	
+	    try {
+	        String cleanQuery = jsonQuery.trim();
+	        if (cleanQuery.startsWith("[")) {
+	            List<Document> pipeline = Document.parse("{ \"p\": " + cleanQuery + " }")
+	                                              .getList("p", Document.class);
+	            mongoCollection.aggregate(pipeline).into(results);
+	        } else {
+	            mongoCollection.find(Document.parse(cleanQuery)).into(results);
+	        }
+	        for (Document doc : results) {
+	            List<String> lineValues = new ArrayList<>();
+	            
+	            for (java.util.Map.Entry<String, Object> entry : doc.entrySet()) {
+	                Object value = entry.getValue();
+	                if (value != null) {
+	                    lineValues.add(value.toString());
+	                }
+	            }
+	            
+	            if (!lineValues.isEmpty()) {
+	                response.append(String.join(" - ", lineValues)).append("\n");
+	            }
+	        }
+	    } catch (Exception e) {
+	        return "Error: " + e.getMessage();
+	    }
+	
+	    return response.toString().trim();
+	}
+    
 
-    public void setAppName(String appName) {
-        this.appName = appName;
-    }
+    public String getConnectionURI() {
+		return connectionURI;
+	}
+
+
+	public void setConnectionURI(String connectionURI) {
+		this.connectionURI = connectionURI;
+	}
+	public MongoClient getClient() {
+	    return this.client;
+	}
 
 }

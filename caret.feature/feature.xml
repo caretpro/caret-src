@@ -329,8 +329,4 @@ version(s), and exceptions or additional permissions here}.&quot;
          id="caret.agent.deepseek"
          version="0.0.0"/>
 
-   <plugin
-         id="caret.tasks.extra"
-         version="0.0.0"/>
-
 </feature>

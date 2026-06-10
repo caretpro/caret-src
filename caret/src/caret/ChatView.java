@@ -226,6 +226,7 @@ public class ChatView  {
 	public static final String GREETING_MESSAGE = "GREETING_MESSAGE";
 	public static final String GOODBYE_MESSAGE = "GOODBYE_MESSAGE";
 	public static final String JAVA_PROGRAMMING = "JAVA_PROGRAMMING";
+	public static final String QUERY_MONGODB = "QUERY_MONGODB";
 	
 	String testsPath= "/Users/Albert/runtime-EclipseApplication/MyProject/src/test/java";
 	
@@ -236,16 +237,13 @@ public class ChatView  {
 	public Task lastTask = null;
 	
 	public StatisticsView statisticsView = StatisticsView.getInstance();
-	
+	public StatisticsViewGlobal statisticsViewGlobal = StatisticsViewGlobal.getInstance();
 	public Response currentResponse = null;
 	public Interaction currentInteraction;
 	private GitUser gitUser;
 	
-	String mongoUser;
-	String mongoPassword;
-	String mongoHost;
+	String mongoURI;
 	String mongoDatabase;
-	String mongoAppName;
 	
 	@PostConstruct
     public void createPartControl(Composite parent){
@@ -308,20 +306,72 @@ public class ChatView  {
         gitUser.loadGitUser();
         gitUser.printGitUser();
     	checkAgents();
-    	
-    	mongoUser     = store.getString(PreferenceConstants.P_MONGO_USER);
-    	mongoPassword = store.getString(PreferenceConstants.P_MONGO_PASSWORD);
-    	mongoHost     = store.getString(PreferenceConstants.P_MONGO_HOST);
+    	//testDB();
+    }
+    
+    public void testDB() {
     	mongoDatabase = store.getString(PreferenceConstants.P_MONGO_DATABASE);
-    	mongoAppName  = store.getString(PreferenceConstants.P_MONGO_APPNAME);
-    	
+    	mongoURI  = store.getString(PreferenceConstants.P_MONGO_URI);
+    	if (mongoURI != null && !mongoURI.isEmpty() && mongoDatabase != null && !mongoDatabase.isEmpty()) {
+			MongoDB mongoDB = new MongoDB();
+	    	mongoDB.setDatabase(mongoDatabase);
+	    	if(mongoDB.connect()) {
+	    		mongoDB.setupCollection("interactions");
+	 	        String query1 = "[{'$match': {'role': 'CARET'}}, {'$group': {'_id': '$result.agent.name', 'uso': {'$sum': 1}}}, {'$sort': {'uso': -1}}, {'$limit': 1}, {'$project': {'_id': 1}}]";
+	 	        String query2 = "[{'$match': {'role': 'CARET', 'result.agent.name': {'$exists': true}}}, {'$group': {'_id': '$result.agent.name'}}, {'$sort': {'_id': 1}}]";
+	 	        String query3 = "[{'$match': {'role': 'CARET'}}, {'$group': {'_id': '$taskName', 'conteo': {'$sum': 1}}}, {'$sort': {'conteo': -1}}, {'$limit': 1}, {'$project': {'_id': 1}}]";
+	 	        String query4 = "[{'$match': {'role': 'CARET'}}, {'$group': {'_id': '$taskName'}}, {'$sort': {'_id': 1}}]";
+	 	        String result = mongoDB.executeQueryClean(query1);
+	 	        addMessage(BOT, result, null, NOT_INDEX);
+	 	        result = mongoDB.executeQueryClean(query2);
+	 	        addMessage(BOT, result, null, NOT_INDEX);
+	 	        result = mongoDB.executeQueryClean(query3);
+	 	        addMessage(BOT, result, null, NOT_INDEX);
+	 	        result = mongoDB.executeQueryClean(query4);
+	 	        addMessage(BOT, result, null, NOT_INDEX);
+	 	        mongoDB.close();
+	    	}
+	       
+		}
+    }
+    
+    public void queryDB(String responseJSON ) {
+    	System.out.println(responseJSON);
+    	HashMap<String, String> jsonParameters = null;
+		Gson gson = new Gson();
+		try {
+			jsonParameters = gson.fromJson(Util.getJSON(responseJSON), new TypeToken<HashMap<String, String>>(){}.getType());
+		} catch (Exception e) {
+			addMessage(BOT, "Failed to execute the query. *", null, NOT_INDEX);
+			return;
+		}
+		mongoDatabase = store.getString(PreferenceConstants.P_MONGO_DATABASE);
+    	mongoURI  = store.getString(PreferenceConstants.P_MONGO_URI);
+    	String query = jsonParameters.get("queryJSON");
+    	String explanation  = jsonParameters.get("queryExplanation");
+    	if(query==null) {
+    		addMessage(BOT, "Failed to execute the query.", null, NOT_INDEX);
+    		return;
+    	}
+    	if (mongoURI != null && !mongoURI.isEmpty()  && mongoDatabase != null && !mongoDatabase.isEmpty()) {
+			MongoDB mongoDB = new MongoDB();
+			mongoDB.setConnectionURI(mongoURI);
+	    	mongoDB.setDatabase(mongoDatabase);
+	    	if(mongoDB.connect()) {
+	    		mongoDB.setupCollection("interactions");
+	 	        String result = mongoDB.executeQueryClean(query);
+	 	        addMessage(BOT, result+"\n\n* "+explanation, null, NOT_INDEX);
+	 	        mongoDB.close();
+	    	}
+	       
+		}
     }
     
     public void restoreAnnotations() {
     	if(getCurrentProject() == null) {
     		return;
     	}
-    	List<Interaction> interactions = LogData.getIteractionsJSON(getCurrentProject());
+    	List<Interaction> interactions = LogData.getInteractionsJSON(getCurrentProject());
     	for (Interaction interaction : interactions) {
          	if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations()) {
          		String projectName= interaction.getContext().getResource().getProjectName();
@@ -610,8 +660,11 @@ public class ChatView  {
     	String messageText = prompt+"\n "+messageInput;
     	System.out.println("FirstLLM: TRUE");
     	if(FirstLLM) {
+    		System.out.println("Util.getJSONa");
     		Response response = processMessageTaskClassifier(Util.codeToLine(messageText,true), TEMPERATURE_LOW);
+    		System.out.println("Util.getJSONb");
     		if(response != null && !response.isError()) {
+    			System.out.println("Util.getJSONc");
     			if(!response.isError()) {
     				System.out.println("Util.getJSON1");
     				if(Util.getJSON(response.getText()) != null) {
@@ -623,14 +676,109 @@ public class ChatView  {
     						System.out.println("Util.getJSON3");
     						jsonParameters = gson.fromJson(Util.getJSON(response.getText()), new TypeToken<HashMap<String, String>>(){}.getType());
     						System.out.println("ClassificationCode: "+jsonParameters.get("classificationCode"));
+    						System.out.println("Util.getJSON4");
     						if(jsonParameters.get("classificationCode").equals(GREETING_MESSAGE)){
     							addMessage(BOT,getGreettingMessage(), null, NOT_INDEX);
     							return;
     						}
+    						System.out.println("Util.getJSON4");
     						if(jsonParameters.get("classificationCode").equals(GOODBYE_MESSAGE)){
     							addMessage(BOT,"Goodbye!", null, NOT_INDEX);
     							return;
     						}
+    						System.out.println("Util.getJSON5");
+    						if(jsonParameters.get("classificationCode").equals(QUERY_MONGODB)){
+    							System.out.println("Util.getJSON: MONGODB");
+    							String promptQueryDB ="Generate a MongoDB query string (JSON) and its explanation for a database that stores interaction log documents (questions and answers) between a user and an LLM assistant (CARET). The documents have the following structure:\n"
+    									+ """
+    										```
+											{
+											    "timestamp": 1770331992872,
+											    "gitUser": "gitpro",
+											    "gitEmail": "gitproj@mail",
+											    "role": "User",
+											    "text": "You are a code Assistant that helps a software developer (User) in programming tasks ...",
+												"context": {
+											      "resource": {
+											        "projectName": "GameScoreManager",
+											        "fileName": "ScoreService.java",
+											        "fullPath": "/GameScoreManager/src/game/ScoreService.java",
+											        "projectRelativePath": "src/game/ScoreService.java",
+											        "codeFragment": {
+											          "startline": 19,
+											          "endline": 19,
+											          "offset": 533,
+											          "length": 0
+											        }
+											      }
+											    },
+											    "taskCode": "OPTIMISE_CODE",
+											    "taskName": "Optimise code",
+											    "chatMessage": "Optimise code: method calculateFinalScore",
+											    "passedPreValidations": false
+											}
+											```
+											```
+											{
+											    "timestamp": 1770331996086,
+											    "gitUser": "gitpro",
+											    "gitEmail": "gitproj@mail",
+											    "role": "CARET",
+											    "text": "```java\n@Override\npublic int calculateFinalScore(List\u003cInteger\u003e data, int factor, User user)...",
+												"code": "\n@Override\npublic int calculateFinalScore(List\u003cInteger\u003e data, int factor, User user)...",
+												"hash": "e38f0a55a10ab2dbaf90ae8e53fa6bc8",
+											    "context": {
+											      "resource": {
+											        "projectName": "GameScoreManager",
+											        "fileName": "ScoreService.java",
+											        "fullPath": "/GameScoreManager/src/game/ScoreService.java",
+											        "projectRelativePath": "src/game/ScoreService.java",
+											        "codeFragment": {
+											          "startline": 19,
+											          "endline": 19,
+											          "offset": 533,
+											          "length": 394,
+											          "methodName": "calculateFinalScore"
+											        }
+											      }
+											    },
+											    "result": {
+											      "used": false,
+											      "createdResource": false,
+											      "agent": {
+											        "name": "GPT",
+											        "technology": "GPT-4.1-MINI",
+											        "isLLM": true
+											      }
+											    },
+											    "taskCode": "OPTIMISE_CODE",
+											    "taskName": "Optimise code",
+											    "targetParameterType": "METHOD",
+											    "targetParameterName": "calculateFinalScore",
+											    "passedPreValidations": true
+											  }
+											 ```
+											Generate a JSON query using the following structure: 
+											{"queryJSON": "[{'$match': {'role': 'CARET'}} ...}]", "queryExplanation": "...[Explanation of the query's functionality and its logic, very brief and easy to understand]..."} 
+											Respond only in JSON format with queryJSON and queryExplanation the requested query. The value of queryJSON will be executed directly against MongoDB. Here are examples of queryJSON responses for the following requests:"
+											- Most used agent:  [{'$match': {'role': 'CARET'}}, {'$group': {'_id': '$result.agent.name', 'usage': {'$sum': 1}}}, {'$sort': {'usage': -1}}, {'$limit': 1}, {'$project': {'_id': 1}}];
+											- Used agents: [{'$match': {'role': 'CARET', 'result.agent.name': {'$exists': true}}}, {'$group': {'_id': '$result.agent.name'}}, {'$sort': {'_id': 1}}];
+											- Most used task: [{'$match': {'role': 'CARET'}}, {'$group': {'_id': '$taskName', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}, {'$limit': 1}, {'$project': {'_id': 1}}];
+											- Used task: [{'$match': {'role': 'CARET'}}, {'$group': {'_id': '$taskName'}}, {'$sort': {'_id': 1}}];
+											
+											Generate a JSON to the following query:
+    										"""+" "+messageInput;
+    							Response responseQuery= processMessage(true, Util.codeToLine(promptQueryDB,true), TEMPERATURE_LOW);
+    				    		if(responseQuery != null && !responseQuery.isError()) {
+    				    			if(Util.getJSON(responseQuery.getText()) != null) {
+    				    				queryDB(Util.getJSON(responseQuery.getText()));
+    				    			}
+    				    		}else {
+    				    			addMessage(BOT,"Your request could not be processed because the agent doesn't respond", null, NOT_INDEX);
+    				    		}
+    							return;
+    						}
+    						System.out.println("Util.getJSON6");
     						if(jsonParameters.get("classificationCode").equals(JAVA_PROGRAMMING)){
     							Response responseProgramming = processMessage(true, Util.codeToLine(messageInput,true), TEMPERATURE_LOW);
     				    		if(response != null && !response.isError()) {
@@ -640,13 +788,16 @@ public class ChatView  {
     				    		}
     							return;
     						}
+    						System.out.println("Util.getJSON7");
     						task = TasksManager.getTask(jsonParameters.get("classificationCode"));
     					}
     					if (task != null) {
+    						System.out.println("Util.getJSON8");
     						updateTaskParameters(task,jsonParameters);
     						Log.d("###Save tasK="+task.getParameterByType(JavaConcept.METHOD.name()).getValue());
     						processTask(task);
     					}else {
+    						System.out.println("Util.getJSON9");
     						List<Task> tasks = TasksManager.getPreferenceTasks(); 
     						String listTasks = ""; 
     						for (Task itemTask : tasks) {
@@ -656,22 +807,95 @@ public class ChatView  {
 		            		if(fallbackResponse != null) {
     			            	if(fallbackResponse.getText() != null) {
 			            			if(fallbackResponse.getText().indexOf("ABOUT_STATISTICS")>-1) {
-			            				Gson statsGson = new Gson();
-			            		        StatisticsResponse statsResponse = statsGson.fromJson(Util.getJSON(fallbackResponse.getText()), StatisticsResponse.class);
-			            		        System.out.println("Classification: " + statsResponse.getClassificationCode());
-			            		        System.out.println("Class: " + statsResponse.getJavaClass());
-			            		        runCompiler(statsResponse.getJavaClass());
-			            		        StatisticsQuery statsQuery = new StatisticsQuery(
-			            		        		messageInput,
-			            		        		statsResponse.getJavaClass(),
-			            		                gitUser.getUser()
-			            		        );
-			            		        String projectName = getCurrentProject().getName();
-			            		        Gson stGson = new GsonBuilder().setPrettyPrinting().create();;
-			            		        String statsJSON = stGson.toJson(statsQuery);
-			            		        String timeSession = Util.getDateFormat("yyyyMMdd-HHmmss");
-			            		        Util.saveLog(pathWorkspace+"/"+projectName+"/", "query-"+timeSession+".gson", "["+statsJSON+"]", true);
-    			            			addMessage(BOT,fallbackResponse.getText(), null, NOT_INDEX);
+			            				
+			            				System.out.println("Util.getJSON: MONGODB");
+		    							String promptQueryDB ="Generate a MongoDB query string for a database that stores interaction log documents (questions and answers) between a user and an LLM assistant (CARET). The documents have the following structure:\n"
+		    									+ """
+		    										Generate a MongoDB query string for a database that stores interaction log documents (questions and answers) between a user and an LLM assistant (CARET). The documents have the following structure:
+													```
+													{
+													    "timestamp": 1770331992872,
+													    "gitUser": "gitpro",
+													    "gitEmail": "gitproj@mail",
+													    "role": "User",
+													    "text": "You are a code Assistant that helps a software developer (User) in programming tasks ...",
+														"context": {
+													      "resource": {
+													        "projectName": "GameScoreManager",
+													        "fileName": "ScoreService.java",
+													        "fullPath": "/GameScoreManager/src/game/ScoreService.java",
+													        "projectRelativePath": "src/game/ScoreService.java",
+													        "codeFragment": {
+													          "startline": 19,
+													          "endline": 19,
+													          "offset": 533,
+													          "length": 0
+													        }
+													      }
+													    },
+													    "taskCode": "OPTIMISE_CODE",
+													    "taskName": "Optimise code",
+													    "chatMessage": "Optimise code: method calculateFinalScore",
+													    "passedPreValidations": false
+													}
+													```
+													```
+													{
+													    "timestamp": 1770331996086,
+													    "gitUser": "gitpro",
+													    "gitEmail": "gitproj@mail",
+													    "role": "CARET",
+													    "text": "```java\n@Override\npublic int calculateFinalScore(List\u003cInteger\u003e data, int factor, User user)...",
+														"code": "\n@Override\npublic int calculateFinalScore(List\u003cInteger\u003e data, int factor, User user)...",
+														"hash": "e38f0a55a10ab2dbaf90ae8e53fa6bc8",
+													    "context": {
+													      "resource": {
+													        "projectName": "GameScoreManager",
+													        "fileName": "ScoreService.java",
+													        "fullPath": "/GameScoreManager/src/game/ScoreService.java",
+													        "projectRelativePath": "src/game/ScoreService.java",
+													        "codeFragment": {
+													          "startline": 19,
+													          "endline": 19,
+													          "offset": 533,
+													          "length": 394,
+													          "methodName": "calculateFinalScore"
+													        }
+													      }
+													    },
+													    "result": {
+													      "used": false,
+													      "createdResource": false,
+													      "agent": {
+													        "name": "GPT",
+													        "technology": "GPT-4.1-MINI",
+													        "isLLM": true
+													      }
+													    },
+													    "taskCode": "OPTIMISE_CODE",
+													    "taskName": "Optimise code",
+													    "targetParameterType": "METHOD",
+													    "targetParameterName": "calculateFinalScore",
+													    "passedPreValidations": true
+													  }
+													 ```
+													Respond only in JSON format with the requested query. Do not provide any explanations, as your response will be executed directly against MongoDB. Here are examples of responses for the following requests:"
+													- Most used agent:  [{'$match': {'role': 'CARET'}}, {'$group': {'_id': '$result.agent.name', 'usage': {'$sum': 1}}}, {'$sort': {'usage': -1}}, {'$limit': 1}, {'$project': {'_id': 1}}];
+													- Used agents: [{'$match': {'role': 'CARET', 'result.agent.name': {'$exists': true}}}, {'$group': {'_id': '$result.agent.name'}}, {'$sort': {'_id': 1}}];
+													- Most used task: [{'$match': {'role': 'CARET'}}, {'$group': {'_id': '$taskName', 'count': {'$sum': 1}}}, {'$sort': {'count': -1}}, {'$limit': 1}, {'$project': {'_id': 1}}];
+													- Used task: [{'$match': {'role': 'CARET'}}, {'$group': {'_id': '$taskName'}}, {'$sort': {'_id': 1}}];
+													
+													Generate a JSON query to fetch the following:
+		    										"""+" "+messageInput;
+		    							Response responseQuery= processMessage(true, Util.codeToLine(promptQueryDB,true), TEMPERATURE_LOW);
+		    				    		if(responseQuery != null && !responseQuery.isError()) {
+		    				    			if(Util.getJSON(responseQuery.getText()) != null) {
+		    				    				queryDB(Util.getJSON(responseQuery.getText()));
+		    				    			}
+		    				    		}else {
+		    				    			addMessage(BOT,"Your request could not be processed because the agent doesn't respond", null, NOT_INDEX);
+		    				    		}
+		    							return;
     			            		}else {
     			            			addMessage(BOT,"Your request could not be processed by some of the supported tasks:\n"+listTasks, null, NOT_INDEX);
         								System.out.println("sendPost: Error getting ABOUT_STATISTICS");
@@ -1729,7 +1953,7 @@ public class ChatView  {
 	}
 	
 	public void processSelectedCode(Task task, ITextSelection iTextSelection, boolean getResponseCode) {
-		System.out.println("#runTask:"+task.getCode());
+		Log.d("#runTask:"+task.getCode());
     	IResource resource = null;
 		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
     	ISelection selection = (ISelection)page.getSelection();
@@ -1745,7 +1969,7 @@ public class ChatView  {
 		    resource = (IResource)editorPart.getEditorInput().getAdapter(IResource.class);
         	if(resource.getProject() != null) {
         		this.resource = resource;
-        		System.out.println("#classname:"+Util.getClassName(resource.getName()));
+        		Log.d("#classname:"+Util.getClassName(resource.getName()));
         		lastProjectName = resource.getProject().getName();
         		Display.getDefault().asyncExec(new Runnable() {
       	    	    public void run() {
@@ -1838,7 +2062,6 @@ public class ChatView  {
 		interactionU.setTaskName(task.getName());
 		interactionU.setContext(new Context((IResource)editorPart.getEditorInput().getAdapter(IResource.class), textSelection));
 		chatView.addInteraction(interactionU);
-		
 		Display.getDefault().asyncExec(new Runnable() {
 	    	    public void run() {
 	    	    	Response response = processMessage(true, messageInput, TEMPERATURE_HIGH);
@@ -1917,6 +2140,7 @@ public class ChatView  {
 	    								MethodReplacer.replaceMethod(doc.get(), methodDeclaration.getName().getIdentifier(), finalResponse.getCode(), editorPart);
 	    								
 	    							}
+	    							chatView.addInteraction(interaction);
 	    							if(task.hasPostValidation()) {
 	    				    			saveActiveEditor();
 	    					    		boolean valid = checkPostValidations(editorPart, finalResponse);
@@ -1936,8 +2160,9 @@ public class ChatView  {
 	    		    }else {
 	    		    	interaction.setText("Error processing the query");
 	    				interaction.setCode(null);
+	    				chatView.addInteraction(interaction);
 	    		    }   
-	    			chatView.addInteraction(interaction);
+	    			
 	    	    }
 	    	});
 	    
@@ -2268,22 +2493,19 @@ public class ChatView  {
 	}
 	
 	public void addInteractionToMongoDB(Interaction interaction) {
-		
-		if (mongoUser != null && !mongoUser.isEmpty() &&
-			    mongoPassword != null && !mongoPassword.isEmpty() &&
-			    mongoHost != null && !mongoHost.isEmpty() &&
-			    mongoDatabase != null && !mongoDatabase.isEmpty() &&
-			    mongoAppName != null && !mongoAppName.isEmpty()) {
+		mongoDatabase = store.getString(PreferenceConstants.P_MONGO_DATABASE);
+    	mongoURI  = store.getString(PreferenceConstants.P_MONGO_URI);
+		if (mongoURI != null && !mongoURI.isEmpty()  && mongoDatabase != null && !mongoDatabase.isEmpty()) {
 			MongoDB mongoDB = new MongoDB();
-	    	mongoDB.setUser(mongoUser);
-	    	mongoDB.setPassword(mongoPassword);
-	    	mongoDB.setHost(mongoHost);
 	    	mongoDB.setDatabase(mongoDatabase);
-	    	mongoDB.setAppName(mongoAppName);
+	    	mongoDB.setConnectionURI(mongoURI);
 	    	if(mongoDB.connect()) {
-	    		mongoDB.setupCollection();
+	    		mongoDB.setupCollection("interactions");
 	 	        mongoDB.addDocument( interaction);
 	 	        mongoDB.getDocument(interaction.getTimestamp());
+	 	        String query = "[{'$group': {'_id': '$result.agent.name', 'uso': {'$sum': 1}}}, {'$sort': {'uso': -1}}, {'$limit': 1}, {'$project': {'_id': 1}}]";
+	 	        String result = mongoDB.executeQueryClean(query);
+	 	        //addMessage(BOT, result, null, NOT_INDEX);
 	 	        mongoDB.close();
 	    	}
 	       
@@ -2293,6 +2515,8 @@ public class ChatView  {
 
 	public int addInteraction(Interaction interaction) {
 		
+		String pluginId = TasksManager.findPluginId(interaction.getTaskCode());
+		interaction.setTaskPluginId(pluginId);
 		addInteractionToMongoDB(interaction);
 		chatData.addInteraction(interaction);
 		int index = chatData.getInteractions().size()-1;
@@ -2316,15 +2540,22 @@ public class ChatView  {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		String jsonInteraction = gson.toJson(currentProjectInteractions);
 		Util.saveLog(pathWorkspace+"/"+projectName+"/", "log-"+timesession+".json", jsonInteraction, false);
-		if(statisticsView != null) {
-			try {
-				statisticsView.updateStatistics();
-			} catch (Exception e) {
-				// TODO: handle exception
-			}
-		}
+		updateStatistics();
 		
 		return (index);
+	}
+	
+	public void updateStatistics() {
+		try {
+			if(statisticsView != null) {
+				statisticsView.updateStatistics();
+			}
+			if(statisticsViewGlobal != null) {
+				statisticsViewGlobal.updateStatistics();
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
 	}
 	
 	public String getInteractions() {
@@ -2395,9 +2626,16 @@ public class ChatView  {
     			+ "Please classify into one of the next categories (classification code in parentheses and in capital letter):\n"
     			+ "\n"
     			+ tasksString
-    			+ "- General request for only java programming, if it could not be identified as a previous supported task(JAVA_PROGRAMMING)"
-    			+ "* Greeting message, it isn't a task (GREETING_MESSAGE)"
-    			+ "* Goodbye message, it isn't a task (GOODBYE_MESSAGE)"
+    			+ "- General request for only java programming, if it could not be identified as a previous supported task(JAVA_PROGRAMMING)\n"
+    			+ "* Greeting message, it isn't a task (GREETING_MESSAGE)\n"
+    			+ "* Goodbye message, it isn't a task (GOODBYE_MESSAGE)\n"
+    			+ "** Query to MongoDB, it isn't a task (QUERY_MONGODB), query some relevant data from the documents in the MongoDB database, which stores documents with the following structure:\n"
+    			+ """
+    					```
+    					{"timestamp":1770331996086,"gitUser":"git","gitEmail":"git@mail","role":"CARET","text":"```java\n@Override\n","code":"\n@Override\npublic int calculateFinalScore(List\u003cInteger\u003e data, int factor, User user) ","hash":"e38f0a55a10ab2dbaf90ae8e53fa6bc8","context":{"resource":{"projectName":"GameScoreManager","fileName":"ScoreService.java","fullPath":"/GameScoreManager/src/game/ScoreService.java","projectRelativePath":"src/game/ScoreService.java","codeFragment":{"startline":19,"endline":19,"offset":533,"length":394,"methodName":"calculateFinalScore"}}},"result":{"used":false,"createdResource":false,"agent":{"name":"GPT","technology":"GPT-4.1-MINI","isLLM":true}},"taskCode":"OPTIMISE_CODE","taskName":"Optimise code","targetParameterType":"METHOD","targetParameterName":"calculateFinalScore","passedPreValidations":true}
+    					```
+						  QUERY_MONGODB must only be used to query data present within this document structure.
+    			"""
     			+ "- None of the above ("+NO_CLASSIFICATION+")\n"
     			+ "\n"
     			+ "Output JSON for the following parameters mentioned: "
@@ -2697,7 +2935,7 @@ public class ChatView  {
     	    			return false;
     	    		}else {
     	    			Log.d("Validator - "+validator.getName()+": Ok");
-    	    			addMessage(SYSTEM, validator.getName()+": OK", null, NOT_INDEX);
+    	    			addMessage(SYSTEM, validator.getName()+": OK \n"+validator.getInfo(), null, NOT_INDEX);
     	    		}
 				}else {
 					Log.d("Validator - "+validator.getName()+" isn't configured.");

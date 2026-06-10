@@ -34,12 +34,6 @@
             name="Tasks">
       </page>
       <page
-            class="caret.preferences.ValidatorsPreferencePage"
-            id="caret.preferences.ValidatorsPreferencePage"
-            category="caret.preferences.ChatbotPreferencePage"
-            name="Validators">
-      </page>
-      <page
             class="caret.preferences.VCSPreferencePage"
             id="caret.preferences.VCSPreferencePage"
             category="caret.preferences.ChatbotPreferencePage"
@@ -50,6 +44,12 @@
             class="caret.preferences.MongoDBPreferencePage"
             id="caret.preferences.MongoDBPreferencePage"
             name="MongoDB">
+      </page>
+      <page
+            category="caret.preferences.ChatbotPreferencePage"
+            class="caret.preferences.TasksRepositoryPreferences"
+            id="caret.preferences.TasksRepositoryPreferences"
+            name="Tasks Repository">
       </page>
    </extension>
    <extension
@@ -121,4 +121,127 @@
 	      requiresUIThread="true">
 	   </javaCompletionProposalComputer>
    </extension>
+   <extension point="org.eclipse.ui.commands">
+      <command
+            id="caret.commands.uploadCommand"
+            name="CARET: Upload Extension">
+      </command>
+      <command
+            id="caret.commands.createFeatureUS"
+            name="CARET: Create Feature and Update Site projects">
+      </command>
+   </extension>
+
+   <extension point="org.eclipse.ui.handlers">
+      <handler
+            class="caret.handlers.CreateUSHandler"
+            commandId="caret.commands.createFeatureUS">
+      </handler>
+      <handler
+            class="caret.handlers.UploadHandler"
+            commandId="caret.commands.uploadCommand">
+      </handler>
+   </extension>
+
+   <extension point="org.eclipse.ui.menus">
+	   <menuContribution locationURI="popup:CARETMenu">
+	      <command
+	            commandId="caret.commands.uploadCommand"
+	            label="Upload Extension to Repository"
+	            style="push">
+	         <visibleWhen checkEnabled="false">
+	            <with variable="selection">
+	               <iterate ifEmpty="false">
+	                  <adapt type="org.eclipse.core.resources.IResource">
+	                     <test 
+			                  property="org.eclipse.core.resources.projectNature" 
+			                  value="caret.site.nature"/>
+	                  </adapt>
+	               </iterate>
+	            </with>
+	         </visibleWhen>
+	      </command>
+	      <command
+            commandId="caret.commands.createFeatureUS"
+            label="Create Feature and Update Site Projects"
+            style="push">
+	         <visibleWhen checkEnabled="false">
+	            <with variable="selection">
+	               <iterate ifEmpty="false" operator="and">
+	                  <adapt type="org.eclipse.core.resources.IProject">
+			               <test 
+			                  property="org.eclipse.core.resources.projectNature" 
+			                  value="caret.nature"/>
+			            </adapt>
+	               </iterate>
+	            </with>
+	         </visibleWhen>
+	      </command>
+	   </menuContribution>
+	</extension>
+   <extension
+         point="org.eclipse.ui.newWizards">
+         <category
+         id="caret.wizard.category"
+         name="Caret Tools"
+         icon="icons/caret_logo.png">
+   	 	 </category>
+	      <wizard
+	            class="caret.wizard.CaretProjectWizard"
+	            id="caret.wizard"
+	            name="Caret Task Project"
+	            category="caret.wizard.category"
+	            project="true"
+	            icon="icons/caret_logo.png">
+	      </wizard>
+   </extension>
+	<extension
+	      id="nature"
+	      name="Caret Project Nature"
+	      point="org.eclipse.core.resources.natures">
+	   <runtime>
+	      <run class="caret.wizard.CaretNature" />
+	   </runtime>
+	</extension>
+	
+	<extension
+	      point="org.eclipse.ui.newWizards">
+	   <wizard
+	         class="caret.wizard.CaretFeatureWizard"
+	         id="caret.wizard.feature"
+	         name="Caret Feature Project"
+	         category="caret.wizard.category"
+	         project="true"
+	         icon="icons/caret_logo.png">
+	   </wizard>
+	</extension>
+	<extension
+	      id="caret.feature.nature"
+	      name="Caret Feature Nature"
+	      point="org.eclipse.core.resources.natures">
+	   <runtime>
+	      <run class="caret.wizard.CaretNature" />
+	   </runtime>
+	</extension>
+	
+	<extension
+      point="org.eclipse.ui.newWizards">
+	   <wizard
+	         class="caret.wizard.CaretSiteWizard"
+	         id="caret.wizard.site"
+	         name="Caret Site Project"
+	         category="caret.wizard.category"
+	         project="true"
+	         icon="icons/caret_logo.png">
+	   </wizard>
+	</extension>
+	
+	<extension
+	      id="caret.site.nature"
+	      name="Caret Site Nature"
+	      point="org.eclipse.core.resources.natures">
+	   <runtime>
+	      <run class="caret.wizard.CaretNature" />
+	   </runtime>
+	</extension>
 </plugin>

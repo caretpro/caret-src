@@ -6,10 +6,12 @@
       <handlers xmi:id="_RFT0IBmPEe60muc1-B4nuA" elementId="caret.handler.0" contributionURI="bundleclass://caret/caret.handlers.SaveHandler" command="_qorWIBmOEe60muc1-B4nuA"/>
       <handlers xmi:id="_hnsSwCSPEe6oo-akEmCiJw" elementId="caret.handler.1" contributionURI="bundleclass://caret/caret.handlers.ClearHandler" command="_SwnmQCSOEe6oo-akEmCiJw"/>
       <handlers xmi:id="_B84NoPbFEfCQ1K_rnftiWQ" elementId="caret.handler.2" contributionURI="bundleclass://caret/caret.handlers.RestoreAnnnotationsHandler" command="_HB600PbFEfCQ1K_rnftiWQ"/>
+      <handlers xmi:id="_BUCsABGgEfGTzO5vYtLUWA" elementId="caret.handler.addTasks" contributionURI="bundleclass://caret/caret.handlers.TasksInstallerHandler" command="_hGgqABGeEfGTzO5vYtLUWA"/>
       <toolbar xmi:id="_yr9QEBmOEe60muc1-B4nuA" elementId="caret.toolbar.0">
         <children xsi:type="menu:HandledToolItem" xmi:id="_7WQNkCSNEe6oo-akEmCiJw" elementId="caret.handledtoolitem.clear" label="Clear" iconURI="platform:/plugin/caret/icons/clear_co.png" command="_SwnmQCSOEe6oo-akEmCiJw"/>
         <children xsi:type="menu:HandledToolItem" xmi:id="_31ofoBmOEe60muc1-B4nuA" elementId="caret.handledtoolitem.save" label="Save" iconURI="platform:/plugin/caret/icons/save.png" command="_qorWIBmOEe60muc1-B4nuA"/>
         <children xsi:type="menu:HandledToolItem" xmi:id="_Qc1QEPbFEfCQ1K_rnftiWQ" elementId="caret.handledtoolitem.restoreAnnotations" label="Restore Annotations" iconURI="platform:/plugin/caret/icons/history_list.png" command="_HB600PbFEfCQ1K_rnftiWQ"/>
+        <children xsi:type="menu:HandledToolItem" xmi:id="_bdikcBGgEfGTzO5vYtLUWA" elementId="caret.handledtoolitem.addTasks" label="Add Tasks" iconURI="platform:/plugin/caret/icons/add.png" command="_hGgqABGeEfGTzO5vYtLUWA"/>
       </toolbar>
     </elements>
     <elements xsi:type="basic:PartDescriptor" xmi:id="_H1hr4LLoEe-UXYryuheorQ" elementId="caret.partdescriptor.statistics" label="Caret Statistics: User" iconURI="platform:/plugin/caret/icons/history_list.png" tooltip="Caret Statistics: User" category="Caret" closeable="true" contributionURI="bundleclass://caret/caret.StatisticsView">
@@ -26,5 +28,6 @@
     <elements xsi:type="commands:Command" xmi:id="_SwnmQCSOEe6oo-akEmCiJw" elementId="caret.command.clear" commandName="Clear Commands"/>
     <elements xsi:type="commands:Command" xmi:id="_qorWIBmOEe60muc1-B4nuA" elementId="caret.command.save" commandName="Save commands"/>
     <elements xsi:type="commands:Command" xmi:id="_HB600PbFEfCQ1K_rnftiWQ" elementId="caret.command.restoreAnnotations" commandName="Restore Annotations"/>
+    <elements xsi:type="commands:Command" xmi:id="_hGgqABGeEfGTzO5vYtLUWA" elementId="caret.command.addTasks" commandName="Add Tasks" commandIconURI=""/>
   </fragments>
 </fragment:ModelFragments>

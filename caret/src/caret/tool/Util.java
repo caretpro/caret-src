@@ -681,4 +681,10 @@ public class Util {
         }
         return path;
     }
+    
+    public static String getBaseName(String input) {
+        if (input == null) return null;
+        int index = input.indexOf(".feature");
+        return (index != -1) ? input.substring(0, index) : input;
+    }
 }

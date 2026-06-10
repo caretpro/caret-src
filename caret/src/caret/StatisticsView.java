@@ -358,7 +358,7 @@ public class StatisticsView {
     	rejectedTasks = 0;
         List<Category> categories = new ArrayList<>();
         String name = getCurrentProject().getName();
-        List<Interaction> interactions = LogData.getIteractionsJSON(getCurrentProject());
+        List<Interaction> interactions = LogData.getInteractionsJSON(getCurrentProject());
         for (Interaction interaction : interactions) {
         	if(interaction.getRole().equals("CARET") && interaction.getGitUser()!= null && interaction.getGitUser().equals(gitUser.getUser())) {
             	
@@ -443,7 +443,7 @@ public class StatisticsView {
         List<Category> agentCategories = new ArrayList<>();
         String name = getCurrentProject().getName();
         System.out.println("###@CARET STATISTICS NEW Project:"+name);
-        List<Interaction> interactions = LogData.getIteractionsJSON(getCurrentProject());
+        List<Interaction> interactions = LogData.getInteractionsJSON(getCurrentProject());
         for (Interaction interaction : interactions) {
         	if(interaction.getRole().equals("CARET") && interaction.isPassedPreValidations() && interaction.getGitUser().equals(gitUser.getUser())) {
         		requestedTasks++;
@@ -842,7 +842,7 @@ public class StatisticsView {
 	        if (project != null && project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
 	            IJavaProject javaProject = JavaCore.create(project);
 	            IPackageFragment[] packages = javaProject.getPackageFragments();
-	            List<Interaction> interactions = LogData.getIteractionsJSON(getCurrentProject());
+	            List<Interaction> interactions = LogData.getInteractionsJSON(getCurrentProject());
 	            for (IPackageFragment myPackage : packages) {
 	                if (myPackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
 	                    for (ICompilationUnit unit : myPackage.getCompilationUnits()) {

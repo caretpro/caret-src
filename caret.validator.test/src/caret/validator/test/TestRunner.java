@@ -100,6 +100,9 @@ public class TestRunner implements Runnable {
     	System.out.println("---testpath:"+testpath);
     	System.out.println("---current project:"+project.getName());
     	String rootPathTest =findRootPathInLargePath(srcPaths, testpath);
+    	if(rootPathTest == null) {
+    		rootPathTest = srcPaths.get(0);
+    	}
     	System.out.println("---current project src:"+rootPathTest);
     	
 		String regex = preferenceStore.getString(TestPropertyConstants.PROPERTY_TEST_REGEX);
@@ -201,9 +204,15 @@ public class TestRunner implements Runnable {
         System.setErr(originalErr);
         this.executionSummary = listener.getSummary();
 
-        this.testInfo += "- Total Tests: " + listener.getSummary().getTestsFoundCount();
-        this.testInfo += "\n- Tests OK: " + listener.getSummary().getTestsSucceededCount();
-        this.testInfo += "\n- Tests Failures: "+listener.getSummary().getFailures().size();
+        long total = listener.getSummary().getTestsFoundCount();
+        long passed = listener.getSummary().getTestsSucceededCount();
+        long failed = listener.getSummary().getFailures().size();
+
+        double successRate = (total > 0) ? (passed * 100.0 / total) : 0.0;
+        String result = String.format("%.2f%%", successRate);
+        
+        this.testInfo += "* Total Tests: " + total +" | Success Rate: " + result+"\n";
+        this.testInfo += "\u2714 Passed: " + passed + " | "+ "\u2716 Failed: "+ failed;
         
         String errorMsg = "";
         TestPlan testPlan = launcher.discover(request);
@@ -405,8 +414,8 @@ public class TestRunner implements Runnable {
         if (!pathSrc.endsWith(File.separator)) {
             pathSrc += File.separator;
         }
-        String relativePath = pathClass.replace(pathSrc, "");
-        String classNameWithPackage = relativePath.replace(File.separatorChar, '.').substring(0, relativePath.lastIndexOf('.'));
+        String relativePath = Util.normalizePath(pathClass).replace(Util.normalizePath(pathSrc), "");
+        String classNameWithPackage = relativePath.replace('/', '.').substring(0, relativePath.lastIndexOf('.'));
         return classNameWithPackage;
     }
 	

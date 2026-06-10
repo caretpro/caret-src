@@ -12,6 +12,7 @@ public class Task {
 	private String iTasksGroupId = null;
 	private boolean previousValidation = false;
 	private boolean postValidation = false;
+	private String action;
 	
 	public Task() {
 		
@@ -21,6 +22,13 @@ public class Task {
 		this(code, name, description, parameters, bind, handler);
 		this.previousValidation = previousValidation;
 		this.postValidation = postValidation;
+	}
+	
+	public Task(String code, String name, String description, Parameter[] parameters, String bind, String handler, boolean previousValidation, boolean postValidation, String action) {
+		this(code, name, description, parameters, bind, handler);
+		this.previousValidation = previousValidation;
+		this.postValidation = postValidation;
+		this.action = action;
 	}
 
 	public Task(String code, String name, String description, Parameter[] parameters, String bind, String handler) {
@@ -220,6 +228,14 @@ public class Task {
 
 	public void setInstructions(String instructions) {
 		this.instructions = instructions;
+	}
+
+	public String getAction() {
+		return action;
+	}
+
+	public void setAction(String action) {
+		this.action = action;
 	}
 
 }

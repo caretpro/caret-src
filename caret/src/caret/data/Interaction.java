@@ -22,6 +22,8 @@ public class Interaction {
 	private String targetParameterName;
 	private String chatMessage;
 	private boolean passedPreValidations;
+	private boolean showAnnotation;
+	private String taskPluginId;
 
 	public Interaction() {
 		loadGitUser();
@@ -163,5 +165,21 @@ public class Interaction {
 
 	public void setPassedPreValidations(boolean passedPreValidations) {
 		this.passedPreValidations = passedPreValidations;
+	}
+
+	public boolean isShowAnnotation() {
+		return showAnnotation;
+	}
+
+	public void setShowAnnotation(boolean showAnnotation) {
+		this.showAnnotation = showAnnotation;
+	}
+	
+	public String getTaskPluginId() {
+		return taskPluginId;
+	}
+
+	public void setTaskPluginId(String taskPluginId) {
+		this.taskPluginId = taskPluginId;
 	}
 }

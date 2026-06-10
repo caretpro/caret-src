@@ -33,6 +33,11 @@ public abstract class ATasksGroup implements ITasksGroup {
     public static final String CREATE_CLASS = "CREATE_CLASS";
     public static final String CREATE_INTERFACE = "CREATE_INTERFACE";
     
+    public static final String CREATE = "CREATE";
+    public static final String UPDATE = "UPDATE";
+    public static final String DELETE = "DELETE";
+    public static final String NONE = "NONE";
+    
     public static final String BIND = IDEBind.CONTEXTUAL.name();
     
 	public ATasksGroup() {

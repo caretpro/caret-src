@@ -1,8 +1,14 @@
 *.class
+*.zip
+**/*.class
 *.log
 **/.log
 **/.lock
 **/.DS_Store
+**/.index
+**/*.zip
 caret.us/**/*.jar
 .metadata/
 ._*
+.DS_Store
+.index

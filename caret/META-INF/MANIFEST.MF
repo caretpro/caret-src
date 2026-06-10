@@ -51,11 +51,21 @@ Require-Bundle: org.eclipse.ui,
  org.hamcrest.core,
  org.opentest4j,
  org.apache.commons.commons-io;bundle-version="2.16.1",
- org.eclipse.jgit;bundle-version="7.0.0"
+ org.eclipse.jgit;bundle-version="7.0.0",
+ org.eclipse.pde.core;bundle-version="3.19.0",
+ org.apache.ant;bundle-version="1.10.14",
+ org.eclipse.ant.core;bundle-version="3.7.400",
+ org.eclipse.equinox.p2.core,
+ org.eclipse.equinox.p2.engine,
+ org.eclipse.equinox.p2.metadata,
+ org.eclipse.equinox.p2.operations,
+ org.eclipse.equinox.p2.repository,
+ org.eclipse.pde.ui;bundle-version="3.15.300"
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Automatic-Module-Name: caret
 Import-Package: jakarta.annotation,
- jakarta.inject
+ jakarta.inject,
+ org.eclipse.pde.internal.core.exports;resolution:=optional
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .,
  lib/bson-5.5.1.jar,

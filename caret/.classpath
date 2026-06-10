@@ -9,8 +9,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="/Users/Albert/Documents/workspace-4.33/caret/lib/bson-5.5.1.jar"/>
-	<classpathentry kind="lib" path="/Users/Albert/Documents/workspace-4.33/caret/lib/mongodb-driver-sync-5.5.1.jar"/>
-	<classpathentry kind="lib" path="/Users/Albert/Documents/workspace-4.33/caret/lib/mongodb-driver-core-5.5.1.jar"/>
+	<classpathentry kind="lib" path="lib/bson-5.5.1.jar"/>
+	<classpathentry kind="lib" path="lib/mongodb-driver-core-5.5.1.jar"/>
+	<classpathentry kind="lib" path="lib/mongodb-driver-sync-5.5.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -127,7 +127,7 @@ public class ResponseDialog extends Dialog {
             	int maxIndex = cacheResponseCode.size() - 1;
             	if(currentCacheResponseIndex>0 && currentCacheResponseIndex <= maxIndex) {
             		currentCacheResponseIndex--;
-            		uodateViewCodeSuggestion(currentCacheResponseIndex);
+            		updateViewCodeSuggestion(currentCacheResponseIndex);
             		if(currentCacheResponseIndex == 0) {
             			backButton.setEnabled(false);
             		}
@@ -144,7 +144,7 @@ public class ResponseDialog extends Dialog {
             	int maxIndex = cacheResponseCode.size() - 1;
             	if(currentCacheResponseIndex>=0 && currentCacheResponseIndex < maxIndex) {
             		currentCacheResponseIndex++;
-            		uodateViewCodeSuggestion(currentCacheResponseIndex);
+            		updateViewCodeSuggestion(currentCacheResponseIndex);
             		if(currentCacheResponseIndex == maxIndex) {
             			nextButton.setEnabled(false);
             		}
@@ -227,7 +227,7 @@ public class ResponseDialog extends Dialog {
 		    	botInteraction.setCode(response.getCode());
 				cacheResponseCode.add(response);
 				currentCacheResponseIndex = cacheResponseCode.size()-1;
-		    	uodateViewCodeSuggestion(currentCacheResponseIndex);
+		    	updateViewCodeSuggestion(currentCacheResponseIndex);
 		    	backButton.setVisible(true);
 		    	nextButton.setVisible(true);
 		    	backButton.setEnabled(true);
@@ -240,7 +240,7 @@ public class ResponseDialog extends Dialog {
 		
     }
     
-    public void uodateViewCodeSuggestion(int index) {
+    public void updateViewCodeSuggestion(int index) {
     	Response response = cacheResponseCode.get(index);
 		rightLabel.setText("Code suggestion ("+response.getAgentId()+"):");
 		updateLabel(rightLabel);
