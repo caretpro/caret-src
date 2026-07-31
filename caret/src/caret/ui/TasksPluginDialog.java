@@ -277,7 +277,7 @@ public class TasksPluginDialog extends Dialog {
     	String mongoURI;
     	String mongoDatabase;
     	store = Activator.getDefault().getPreferenceStore();
-    	mongoDatabase = store.getString(PreferenceConstants.P_MONGO_DATABASE);
+    	mongoDatabase = caret.ChatView.MONGO_DATABASE;
     	mongoURI  = store.getString(PreferenceConstants.P_MONGO_URI);
 		if (mongoURI != null && !mongoURI.isEmpty()  && mongoDatabase != null && !mongoDatabase.isEmpty()) {
 			MongoDB mongoDB = new MongoDB();
@@ -319,7 +319,7 @@ public class TasksPluginDialog extends Dialog {
 	        String mongoURI;
 	        String mongoDatabase;
 	        store = Activator.getDefault().getPreferenceStore();
-	        mongoDatabase = store.getString(PreferenceConstants.P_MONGO_DATABASE);
+	        mongoDatabase = caret.ChatView.MONGO_DATABASE;
 	        mongoURI  = store.getString(PreferenceConstants.P_MONGO_URI);
 	        
 	        if (mongoURI != null && !mongoURI.isEmpty()  && mongoDatabase != null && !mongoDatabase.isEmpty()) {

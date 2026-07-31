@@ -1,28 +1,26 @@
 package caret.agent.codex;
+import com.google.gson.annotations.SerializedName;
 
 public class Usage {
-    private int input_tokens;
-    private InputTokensDetails input_tokens_details;
-    private int output_tokens;
-    private OutputTokensDetails output_tokens_details;
-    private int total_tokens;
 
-    public int getInput_tokens() { return input_tokens; }
-    public void setInput_tokens(int input_tokens) { this.input_tokens = input_tokens; }
+    @SerializedName("input_tokens")
+    private int inputTokens;
 
-    public InputTokensDetails getInput_tokens_details() { return input_tokens_details; }
-    public void setInput_tokens_details(InputTokensDetails input_tokens_details) {
-        this.input_tokens_details = input_tokens_details;
+    @SerializedName("output_tokens")
+    private int outputTokens;
+
+    @SerializedName("total_tokens")
+    private int totalTokens;
+
+    public int getInputTokens() {
+        return inputTokens;
     }
 
-    public int getOutput_tokens() { return output_tokens; }
-    public void setOutput_tokens(int output_tokens) { this.output_tokens = output_tokens; }
-
-    public OutputTokensDetails getOutput_tokens_details() { return output_tokens_details; }
-    public void setOutput_tokens_details(OutputTokensDetails output_tokens_details) {
-        this.output_tokens_details = output_tokens_details;
+    public int getOutputTokens() {
+        return outputTokens;
     }
 
-    public int getTotal_tokens() { return total_tokens; }
-    public void setTotal_tokens(int total_tokens) { this.total_tokens = total_tokens; }
+    public int getTotalTokens() {
+        return totalTokens;
+    }
 }

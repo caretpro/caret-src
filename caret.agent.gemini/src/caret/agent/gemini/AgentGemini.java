@@ -29,7 +29,7 @@ public class AgentGemini implements AgentInterface{
 	private String technology = "Gemini";
 	private String key=""; 
 	private String url="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-	private String model="gemini-2.0-flash";
+	private String model="gemini-3.5-flash-lite";
 	private float defaultTemperature = 0.7F;
 	
 	@Override
@@ -88,6 +88,8 @@ public class AgentGemini implements AgentInterface{
 	   	    response.setText(queryResponse.getChoices()[0].getMessage().getContent());
 	   	    response.setCode(getCode(queryResponse.getChoices()[0].getMessage().getContent()));
 	   	    response.setFallbackIntent(false);
+	   	    response.setPromptTokens(queryResponse.getUsage().getPromptTokens());
+			response.setCompletionTokens(queryResponse.getUsage().getCompletionTokens());
 			
 		} catch (Exception e) {
 			Log.e("Error: "+e.getMessage());

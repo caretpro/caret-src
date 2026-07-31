@@ -35,13 +35,6 @@ public class QueryResponse {
     public Output[] getOutput() { return output; }
     public void setOutput(Output[] output) { this.output = output; }
 
-    public Usage getUsage() { return usage; }
+    public Usage getUsage() { return this.usage; }
     public void setUsage(Usage usage) { this.usage = usage; }
 }
-
-
-	
-	
-	
-
-

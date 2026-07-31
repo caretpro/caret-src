@@ -28,12 +28,6 @@ public class PluginRepository {
         // Accessing the specific database and collection
         this.collection = mongoDb.getMongoCollection();
     }
-
-    /**
-     * Saves a PluginDocument to the database.
-     * If a document with the same ID AND Version exists, it updates it.
-     * Otherwise, it creates a new document.
-     */
     
     public void savePlugin(PluginDocument plugin) {
         Log.d("saving " + plugin.getName() + " (v" + plugin.getVersion() + ")" + ": " + plugin.getInstallCount());

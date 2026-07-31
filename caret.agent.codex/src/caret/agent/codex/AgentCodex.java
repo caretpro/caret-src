@@ -29,7 +29,7 @@ public class AgentCodex implements AgentInterface{
 	private String technology = "Codex";
 	private String key="";
 	private String url="https://api.openai.com/v1/responses";
-	private String model="codex-mini-latest";
+	private String model="";
 	private float defaultTemperature = 0.7F;
 	
 	@Override
@@ -90,6 +90,8 @@ public class AgentCodex implements AgentInterface{
 	   	 	response.setText(text);
 	   	    response.setCode(getCode(text));
 	   	    response.setFallbackIntent(false);
+	   	    response.setPromptTokens(queryResponse.getUsage().getInputTokens());
+			response.setCompletionTokens(queryResponse.getUsage().getOutputTokens());
 			
 		} catch (Exception e) {
 			Log.e("Error: "+e.getMessage());

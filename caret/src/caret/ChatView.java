@@ -244,6 +244,7 @@ public class ChatView  {
 	
 	String mongoURI;
 	String mongoDatabase;
+	public static final String MONGO_DATABASE = "db_caret";
 	
 	@PostConstruct
     public void createPartControl(Composite parent){
@@ -310,7 +311,7 @@ public class ChatView  {
     }
     
     public void testDB() {
-    	mongoDatabase = store.getString(PreferenceConstants.P_MONGO_DATABASE);
+    	mongoDatabase = caret.ChatView.MONGO_DATABASE;
     	mongoURI  = store.getString(PreferenceConstants.P_MONGO_URI);
     	if (mongoURI != null && !mongoURI.isEmpty() && mongoDatabase != null && !mongoDatabase.isEmpty()) {
 			MongoDB mongoDB = new MongoDB();
@@ -345,7 +346,7 @@ public class ChatView  {
 			addMessage(BOT, "Failed to execute the query. *", null, NOT_INDEX);
 			return;
 		}
-		mongoDatabase = store.getString(PreferenceConstants.P_MONGO_DATABASE);
+		mongoDatabase = caret.ChatView.MONGO_DATABASE;
     	mongoURI  = store.getString(PreferenceConstants.P_MONGO_URI);
     	String query = jsonParameters.get("queryJSON");
     	String explanation  = jsonParameters.get("queryExplanation");
@@ -2493,7 +2494,7 @@ public class ChatView  {
 	}
 	
 	public void addInteractionToMongoDB(Interaction interaction) {
-		mongoDatabase = store.getString(PreferenceConstants.P_MONGO_DATABASE);
+		mongoDatabase = caret.ChatView.MONGO_DATABASE;
     	mongoURI  = store.getString(PreferenceConstants.P_MONGO_URI);
 		if (mongoURI != null && !mongoURI.isEmpty()  && mongoDatabase != null && !mongoDatabase.isEmpty()) {
 			MongoDB mongoDB = new MongoDB();

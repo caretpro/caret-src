@@ -19,9 +19,9 @@ import caret.tool.Log;
 public class AgentLlama implements AgentInterface {
 
 	private IPreferenceStore store;
-	private String ID = "Code Llama";
-	private String name = "Code Llama";
-	private String technology = "Code Llama";
+	private String ID = "Llama";
+	private String name = "Llama";
+	private String technology = "Llama";
 	private String key="";
 	private String url=""
 			+ "/";
@@ -138,7 +138,7 @@ public class AgentLlama implements AgentInterface {
 				}
 			}
 			if(code!=null){
-			    Log.d("### Code - INIT ### CODELLAMA\n"+code+"\n### Code - END ### CODELLAMA");
+			    Log.d("### Code - INIT ### LLAMA\n"+code+"\n### Code - END ### LLAMA");
 			}
 		} catch (Exception e) {
 			Log.e("Error: "+e.getMessage());

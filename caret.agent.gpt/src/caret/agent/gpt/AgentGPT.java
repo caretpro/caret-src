@@ -88,6 +88,8 @@ public class AgentGPT implements AgentInterface{
 	   	    response.setText(queryResponse.getChoices()[0].getMessage().getContent());
 	   	    response.setCode(getCode(queryResponse.getChoices()[0].getMessage().getContent()));
 	   	    response.setFallbackIntent(false);
+	   	    response.setPromptTokens(queryResponse.getUsage().getPromptTokens());
+			response.setCompletionTokens(queryResponse.getUsage().getCompletionTokens());
 			
 		} catch (Exception e) {
 			Log.e("Error: "+e.getMessage());

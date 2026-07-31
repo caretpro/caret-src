@@ -21,12 +21,6 @@ public class MongoDBPreferencePage extends FieldEditorPreferencePage implements 
                 PreferenceConstants.P_MONGO_URI, 
                 "URI (Connection String):", 
                 getFieldEditorParent()));
-        
-        // Optional database name
-        addField(new StringFieldEditor(
-                PreferenceConstants.P_MONGO_DATABASE, 
-                "Database:", 
-                getFieldEditorParent()));
     }
 
     @Override

@@ -15,6 +15,9 @@ public class Response {
 	private HashMap<String, String> parameters;
 	private boolean error = false;
 	private String agentId;
+	private int promptTokens;
+	private int completionTokens;
+	private long duration;
 
 	public String getErrorMessage() {
 		return errorMessage;
@@ -104,5 +107,29 @@ public class Response {
 
 	public void setAgentId(String agentId) {
 		this.agentId = agentId;
+	}
+
+	public int getPromptTokens() {
+		return promptTokens;
+	}
+
+	public void setPromptTokens(int promptTokens) {
+		this.promptTokens = promptTokens;
+	}
+
+	public int getCompletionTokens() {
+		return completionTokens;
+	}
+
+	public void setCompletionTokens(int completionTokens) {
+		this.completionTokens = completionTokens;
+	}
+
+	public long getDuration() {
+		return duration;
+	}
+
+	public void setDuration(long duration) {
+		this.duration = duration;
 	}
 }

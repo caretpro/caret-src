@@ -1,5 +1,7 @@
 package caret.agent.gemini.openai;
 
+import caret.agent.Usage;
+
 public class QueryResponse {
 
 	private String id;
@@ -7,6 +9,7 @@ public class QueryResponse {
 	private long created;
 	private Choices [] choices;
 	private String finish_reason;
+	private Usage usage;
 	
 	public String getId() {
 		return id;
@@ -38,6 +41,10 @@ public class QueryResponse {
 	public void setFinish_reason(String finish_reason) {
 		this.finish_reason = finish_reason;
 	}
-	
+	public Usage getUsage() {
+        return usage;
+    }
+    public void setUsage(Usage usage) {
+        this.usage = usage;
+    }
 }
-

@@ -5,8 +5,8 @@
          point="caret.extagent">
       <agent
             class="caret.agent.llama.AgentLlama"
-            id="Code Llama"
-            name="Code Llama">
+            id="Llama"
+            name="Llama">
       </agent>
    </extension>
 	<extension
@@ -14,7 +14,7 @@
       <page
             class="caret.agent.llama.preferences.LlamaPreferencePage"
             id="caret.agent.llama.preferences.LlamaPreferencePage"
-            name="Code Llama"
+            name="Llama"
             category="caret.preferences.AgentsPreferencePage">
       </page>
    </extension>
