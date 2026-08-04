@@ -244,4 +244,11 @@
 	      <run class="caret.wizard.CaretNature" />
 	   </runtime>
 	</extension>
+	
+	<extension
+      point="org.eclipse.jdt.core.classpathContainerInitializer">
+	   <classpathContainerInitializer
+	         id="CARET_CONTAINER"
+	         class="caret.container.ContainerInitializer"/>
+	</extension>
 </plugin>

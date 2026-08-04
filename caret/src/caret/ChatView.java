@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken;
 import caret.agent.AgentInterface;
 import caret.agent.Response;
 import caret.agent.ResponseJSON;
+import caret.container.ClasspathUtil;
 import caret.contentAssist.Suggestions;
 import caret.data.Agent;
 import caret.data.AnnotationRestorer;
@@ -2139,7 +2140,13 @@ public class ChatView  {
 	    							}else {
 	    								MethodReplacer.replaceMethodBody(source, methodDeclaration.getName().getIdentifier(), finalResponse.getCode(), editorPart);
 	    								MethodReplacer.replaceMethod(doc.get(), methodDeclaration.getName().getIdentifier(), finalResponse.getCode(), editorPart);
-	    								
+	    								try {
+											ClasspathUtil.addBoosterLibrary(getCurrentProject());
+											addImport(doc);
+										} catch (Exception e) {
+											Log.d("Error adding Library");
+											e.printStackTrace();
+										}
 	    							}
 	    							chatView.addInteraction(interaction);
 	    							if(task.hasPostValidation()) {
@@ -2540,7 +2547,7 @@ public class ChatView  {
 		}
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		String jsonInteraction = gson.toJson(currentProjectInteractions);
-		Util.saveLog(pathWorkspace+"/"+projectName+"/", "log-"+timesession+".json", jsonInteraction, false);
+		//Util.saveLog(pathWorkspace+"/"+projectName+"/", "log-"+timesession+".json", jsonInteraction, false);
 		updateStatistics();
 		
 		return (index);

@@ -47,7 +47,9 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.ToolTip;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
 
@@ -716,35 +718,51 @@ public class StatisticsView {
 		return totalInteractions;
 	}*/
 	
-	public IProject getCurrentProject() {
-		IProject project = null;
-			//IEditorPart  editorPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-			IResource  resource= Resource.getSelectedResource();
-			if(resource != null){
-			    //IResource  resource= (IResource)editorPart.getEditorInput().getAdapter(IResource.class);
-			    project = resource.getProject();
-			    if(project != null) {
-			    	return project;
-			    }
-			}else {
-		        IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-		        IProject lastProject = null;
-		        long modificationStamp = 0;
-		        for (IProject proj : projects) {
-		        	if(lastProject == null) {
-		        		lastProject = proj;
-		        	}
-		        	if(proj.getModificationStamp()> modificationStamp) {
-		        		lastProject = proj;
-		        		modificationStamp = proj.getModificationStamp();
-		        	}
-		        }
-		        if(lastProject != null) {
-		        	return lastProject;
-		        }
-			}
-		return project;
-	}
+    public IProject getCurrentProject() {
+        IProject project = null;
+        //IEditorPart  editorPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+        IResource  resource= Resource.getSelectedResource();
+        if(resource != null){
+            //IResource  resource= (IResource)editorPart.getEditorInput().getAdapter(IResource.class);
+            project = resource.getProject();
+            if(project != null) {
+                return project;
+            }
+        }
+        if(project == null) {
+            if (project == null) {
+                IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+                if (window != null && window.getActivePage() != null) {
+                    IEditorPart editorPart = window.getActivePage().getActiveEditor();
+                    if (editorPart != null) {
+                        IResource editorResource = editorPart.getEditorInput().getAdapter(IResource.class);
+                        if (editorResource != null) {
+                            project = editorResource.getProject();
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(project == null){
+            IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+            IProject lastProject = null;
+            long modificationStamp = 0;
+            for (IProject proj : projects) {
+                if(lastProject == null) {
+                    lastProject = proj;
+                }
+                if(proj.getModificationStamp()> modificationStamp) {
+                    lastProject = proj;
+                    modificationStamp = proj.getModificationStamp();
+                }
+            }
+            if(lastProject != null) {
+                return lastProject;
+            }
+        }
+        return project;
+    }
 	
 	private void updateStyledTextTasks() {
 		

@@ -18,8 +18,8 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 	public void initializeDefaultPreferences() {
 		IPreferenceStore store = Activator.getDefault().getPreferenceStore();
 		store.setDefault(PreferenceConstants.P_DEEPSEEK_KEY, "");
-		store.setDefault(PreferenceConstants.P_DEEPSEEK_URL, "https://api.deepseek.com/chat/completions");
-		store.setDefault(PreferenceConstants.P_DEEPSEEK_MODEL, "deepseek-chat");
+		store.setDefault(PreferenceConstants.P_DEEPSEEK_URL, "");
+		store.setDefault(PreferenceConstants.P_DEEPSEEK_MODEL, "");
 	}
 
 }

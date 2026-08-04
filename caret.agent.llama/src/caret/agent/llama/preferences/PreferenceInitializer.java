@@ -19,7 +19,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		IPreferenceStore store = Activator.getDefault().getPreferenceStore();
 		store.setDefault(PreferenceConstants.P_LLAMA_KEY, "");
 		store.setDefault(PreferenceConstants.P_LLAMA_URL, "");
-		store.setDefault(PreferenceConstants.P_LLAMA_MODEL, "codellama-7b-instruct");
+		store.setDefault(PreferenceConstants.P_LLAMA_MODEL, "");
 	}
 
 }

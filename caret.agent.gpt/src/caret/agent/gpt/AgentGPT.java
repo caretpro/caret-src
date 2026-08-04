@@ -29,7 +29,7 @@ public class AgentGPT implements AgentInterface{
 	private String technology = "GPT";
 	private String key="";
 	private String url="https://api.openai.com/v1/chat/completions";
-	private String model="gpt-4.1-mini";
+	private String model="";
 	private float defaultTemperature = 0.7F;
 	
 	@Override

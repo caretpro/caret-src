@@ -29,7 +29,7 @@ public class AgentDeepSeek implements AgentInterface{
 	private String technology = "DeepSeek";
 	private String key="";
 	private String url="https://api.deepseek.com/chat/completions";
-	private String model="deepseek-chat";
+	private String model="";
 	private float defaultTemperature = 0.7F;
 	
 	@Override

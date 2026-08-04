@@ -23,9 +23,8 @@ public class AgentLlama implements AgentInterface {
 	private String name = "Llama";
 	private String technology = "Llama";
 	private String key="";
-	private String url=""
-			+ "/";
-	private String model="codellama-7b-instruct";
+	private String url="";
+	private String model="";
 	private float defaultTemperature = 0.7F;
 	
 	@Override

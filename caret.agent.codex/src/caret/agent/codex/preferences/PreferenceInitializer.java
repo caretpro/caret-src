@@ -18,8 +18,8 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 	public void initializeDefaultPreferences() {
 		IPreferenceStore store = Activator.getDefault().getPreferenceStore();
 		store.setDefault(PreferenceConstants.P_CODEX_KEY, "");
-		store.setDefault(PreferenceConstants.P_CODEX_URL, "https://api.openai.com/v1/responses");
-		store.setDefault(PreferenceConstants.P_CODEX_MODEL, "codex-mini-latest");
+		store.setDefault(PreferenceConstants.P_CODEX_URL, "");
+		store.setDefault(PreferenceConstants.P_CODEX_MODEL, "");
 	}
 
 }
